@@ -1,101 +1,115 @@
-# DoRA vs LoRA: controlled sanity experiment
+# When does DoRA help? Geometry and few-shot domain adaptation
 
-Мини-исследование для постерной сессии «Лето с AIRI 2026». Репозиторий воспроизводит контролируемый эксперимент из постера: сравнение замороженной матрицы, LoRA rank 4 и DoRA rank 4 в задаче, где целевые веса отличаются от исходных одновременно направлением и нормами.
+This repository contains a small, reproducible research project prepared for the **AIRI Summer School 2026** poster session. It replaces the original single synthetic sanity check with two complementary studies:
 
-DoRA — Weight-Decomposed Low-Rank Adaptation — явно разделяет адаптацию направления и magnitude-компоненты веса. Эксперимент ниже изолирует именно этот механизм; он не является воспроизведением больших экспериментов статьи на LLaMA, LLaVA или VL-BART.
+1. a controlled **capacity study** that varies adapter rank and row-wise magnitude shift;
+2. a trained **real-image proxy benchmark** on `sklearn Digits` under contrast, rotation, and mixed domain shifts.
 
-## Главный результат
+The question is deliberately narrower than “is DoRA always better than LoRA?”:
 
-Средние значения по seeds `123, 124, 125`:
+> **Under which weight-shift geometry and parameter budget does separating magnitude from direction help?**
 
-| Метод | Test MSE | Test MAE | Обучаемые параметры | Время обучения, с* |
-|---|---:|---:|---:|---:|
-| Frozen base | 1.529153 ± 0.053710 | 0.875526 ± 0.036805 | 0 | 0.000 |
-| LoRA rank 4 | 0.154478 ± 0.038913 | 0.274470 ± 0.044980 | 128 | 0.872 |
-| DoRA rank 4 | 0.000134 ± 0.000010 | 0.009195 ± 0.000369 | 136 | 1.278 |
+## Main findings
 
-По среднему Test MSE DoRA уменьшила ошибку относительно LoRA примерно в `1150×` при восьми дополнительных обучаемых параметрах (`+6.25%`). Результат ожидаемо силён, поскольку задача специально построена так, чтобы требовать изменения и направления, и magnitude.
+- **Positive control:** when the target update is purely additive and rank 4, both rank-4 LoRA and DoRA represent it up to numerical precision.
+- **Capacity gap:** at row-wise magnitude strength `γ=0.8`, the best possible additive rank-4 LoRA update has mean relative weight error `0.292`, while a feasible rank-4 DoRA construction has error `1.45e-7`. This is a synthetic representational result, not a trained-model accuracy claim.
+- **Real images, fixed rank 4:** DoRA changes test accuracy relative to LoRA by:
+  - contrast: `+0.33 pp` (95% paired CI `[-1.51, 2.18]`);
+  - rotation: `+0.67 pp` (`[0.20, 1.13]`);
+  - mixed shift: `+1.39 pp` (`[0.08, 2.70]`).
+- **Negative/control result:** on pure contrast shift, magnitude-only adaptation reaches `97.0%` with only `202` trainable parameters; a full low-rank adapter is unnecessary.
+- **Validation-selected rank:** on the mixed shift, DoRA reaches `76.72%`, LoRA `75.28%`, full fine-tuning `73.33%`, and the frozen model `50.83%` (five paired adaptation seeds).
 
-\* Время приведено только для сохранённого запуска и не является переносимым сравнением производительности между устройствами.
+These results support a conditional conclusion: **DoRA is most useful when the target shift contains heterogeneous magnitude changes, but it is not a universal replacement for LoRA.**
 
-## Постановка эксперимента
+## Method in one minute
 
-- `W_base` имеет размер `8 × 24`.
-- Целевое направление строится из `W_base` и low-rank сдвига истинного ранга 4.
-- Нормы восьми строк дополнительно умножаются на коэффициенты от `0.45` до `1.95`.
-- Train/test: `4096 / 1024` синтетических примеров.
-- Гауссов шум: `σ = 0.01`.
-- LoRA и DoRA: rank 4, одинаковые данные и настройки оптимизации.
-- Adam, learning rate `0.05`, batch size `128`, `1200` шагов.
-- Seeds: `123, 124, 125`.
-
-Для LoRA обучаются матрицы `A` и `B`:
+For a frozen base weight `W₀`, LoRA learns a rank-`r` additive update:
 
 ```text
-W = W_base + (1 / r) BA
+W_LoRA = W₀ + BA
 ```
 
-Для DoRA сначала формируется направление, затем оно нормируется по строкам и умножается на отдельный обучаемый magnitude-вектор:
+DoRA learns the directional update with the same low-rank factors and a separate row-magnitude vector `m`:
 
 ```text
-V = W_base + (1 / r) BA
-W_DoRA = row_normalize(V) * magnitude
+V = W₀ + BA
+W_DoRA = m ⊙ V / ||V||row
 ```
 
-## Структура репозитория
+The implementation follows the published/PEFT optimization rule and detaches `||V||row` from the backward graph. Both adapters use `α=r`, so the effective scale `α/r` equals one.
+
+### Controlled capacity study
+
+- weight shape: `16 × 32`;
+- ground-truth directional update rank: `4`;
+- adapter ranks: `1, 2, 4, 8`;
+- row-wise magnitude strengths: `0.0, 0.2, 0.4, 0.6, 0.8`;
+- ten generated problems per cell;
+- LoRA receives its exact truncated-SVD optimum;
+- DoRA receives a feasible construction from the known synthetic decomposition.
+
+### Real-image benchmark
+
+- dataset: `sklearn.datasets.load_digits` (`8×8` handwritten digits);
+- frozen backbone: MLP `64 → 128 → 64 → 10`, clean test accuracy `97.5%`;
+- target training set: 40 transformed samples per class (`400` total);
+- shifts: low contrast, rotation, and rotation + contrast + noise;
+- methods: frozen, magnitude-only, LoRA, DoRA, full fine-tuning;
+- ranks: `1, 2, 4, 8`;
+- five paired seeds;
+- learning rate and early stopping selected on a held-out target validation split;
+- test set is used only after model selection.
+
+## Repository layout
 
 ```text
 .
-├── run_experiment.py
-├── requirements.txt
-├── notebooks/
-│   └── AIRI_DoRA_experiment_clean_final.ipynb
-├── results/
-│   ├── AIRI_DoRA_multi_seed_results.csv
-│   └── AIRI_DoRA_summary_results.csv
-├── poster/
-│   ├── Lapin_Vladislav_DoRA_poster_AIRI_2026.pdf
-│   └── Lapin_Vladislav_DoRA_poster_AIRI_2026.pptx
-└── report/
-    └── AIRI_DoRA_research_proposal.pdf
+├── src/dora_study/          # Adapter, synthetic, and Digits implementations
+├── tests/                   # Deterministic correctness checks
+├── notebooks/               # Executed analysis companion
+├── results/                 # Raw runs, summaries, metadata, and key metrics
+├── figures/                 # Poster-ready PNG and SVG figures
+├── poster/                  # Final AIRI poster in PPTX and PDF
+├── docs/                    # Research report and validation notes
+├── run_synthetic.py
+├── run_digits.py
+├── analyze_results.py
+└── make_figures.py
 ```
 
-## Быстрый запуск
+## Reproduce
 
-Требуется Python 3.10+.
+Python 3.10+ is recommended.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python run_experiment.py
+
+python run_synthetic.py
+python run_digits.py
+python analyze_results.py
+python make_figures.py
+python -m unittest discover -s tests -v
 ```
 
-На Windows вместо `source .venv/bin/activate`:
+The complete CPU experiment is intentionally small. Use `--quick` on either experiment script for a smoke test.
 
-```powershell
-.venv\Scripts\activate
-```
+## What this project does not claim
 
-После запуска в каталоге `outputs/` появятся:
+- It is **not** a reproduction of the DoRA results on LLaMA, LLaVA, or VL-BART.
+- The Digits experiment is a real-data proxy for domain adaptation, not evidence about LLM quality.
+- The synthetic DoRA construction uses the known generative decomposition and measures capacity, not trainability.
+- Five seeds quantify local variability but are not a substitute for multiple architectures and large downstream benchmarks.
+- Wall-clock speed is not compared because it is hardware- and implementation-dependent.
 
-- результаты каждого метода для каждого seed;
-- сводная таблица mean ± std;
-- график Test MSE в логарифмической шкале.
+## Sources
 
-Ноутбук из `notebooks/` можно открыть локально в Jupyter или загрузить в Google Colab вручную. Для самого эксперимента интернет и GPU не требуются.
+1. Hu et al., [LoRA: Low-Rank Adaptation of Large Language Models](https://openreview.net/forum?id=nZeVKeeFYf9), ICLR 2022.
+2. Liu et al., [DoRA: Weight-Decomposed Low-Rank Adaptation](https://proceedings.mlr.press/v235/liu24bn.html), ICML 2024 Oral.
+3. [Official NVlabs/DoRA implementation](https://github.com/NVlabs/DoRA).
+4. [Hugging Face PEFT LoRA/DoRA documentation](https://huggingface.co/docs/peft/package_reference/lora).
+5. Zhang et al., [AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning](https://openreview.net/forum?id=lq62uWRJjiY), ICLR 2023.
 
-## Ограничения
-
-- Синтетическая задача сконструирована в пользу проверки механизма magnitude/direction.
-- Результат не доказывает, что DoRA всегда превосходит LoRA на реальных моделях и датасетах.
-- Wall-clock время зависит от оборудования и служит только иллюстрацией дополнительной стоимости обучения.
-- Следующий отдельный эксперимент — LoRA/DoRA на DistilBERT/SST-2 — не используется для чисел этого постера.
-
-## Источники
-
-1. Hu et al. [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685), ICLR 2022.
-2. Liu et al. [DoRA: Weight-Decomposed Low-Rank Adaptation](https://proceedings.mlr.press/v235/liu24bn.html), ICML 2024 Oral.
-3. Официальная реализация авторов: [NVlabs/DoRA](https://github.com/NVlabs/DoRA).
-
-Автор мини-исследования: Владислав Лапин, МФТИ ФПМИ / AI360.
+Author: **Vladislav Lapin**, MIPT FPMI / AI360.

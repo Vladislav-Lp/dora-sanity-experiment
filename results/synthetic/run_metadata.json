@@ -1,0 +1,36 @@
+{
+  "seeds": [
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109
+  ],
+  "ranks": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "magnitude_strengths": [
+    0.0,
+    0.2,
+    0.4,
+    0.6,
+    0.8
+  ],
+  "steps": 1600,
+  "learning_rates": [
+    0.01,
+    0.03,
+    0.1
+  ],
+  "torch_version": "2.5.1+cpu",
+  "quick": false,
+  "with_optimization": false
+}

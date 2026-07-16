@@ -1,0 +1,37 @@
+{
+  "base_clean_accuracy_pct": 97.5,
+  "rank4_dora_minus_lora_pp": {
+    "contrast": 0.3333333333333388,
+    "mixed": 1.3888888888888906,
+    "rotation": 0.6666666666666532
+  },
+  "rank4_delta_ci95_pp": {
+    "contrast": [
+      -1.5144137976699221,
+      2.1810804643366
+    ],
+    "mixed": [
+      0.07552343277226603,
+      2.702254345005515
+    ],
+    "rotation": [
+      0.20392581580035596,
+      1.1294075175329503
+    ]
+  },
+  "mixed_validation_selected_accuracy_pct": {
+    "DoRA": 76.72222222222223,
+    "Frozen": 50.83333333333333,
+    "Full fine-tuning": 73.33333333333333,
+    "LoRA": 75.27777777777777,
+    "Magnitude-only": 65.88888888888889
+  },
+  "synthetic_rank4_lora_error_at_gamma_08": 0.2923089176416397,
+  "synthetic_rank4_dora_error_at_gamma_08": 1.4510765709019324e-07,
+  "validation_status": "ready_with_caveats",
+  "caveats": [
+    "Small real-data proxy (sklearn Digits), not an LLM reproduction.",
+    "Five paired adaptation seeds with one fixed pretrained backbone.",
+    "Synthetic DoRA result is a feasible ground-truth construction; LoRA receives its exact SVD optimum."
+  ]
+}

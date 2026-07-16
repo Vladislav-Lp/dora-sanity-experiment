@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airi-dora-geometry-study"
+version = "0.2.0"
+description = "Controlled DoRA/LoRA capacity study and few-shot image-domain adaptation benchmark"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.2,<3",
+  "numpy>=1.24,<3",
+  "pandas>=2.0,<3",
+  "scipy>=1.10,<2",
+  "scikit-learn>=1.3,<2",
+  "matplotlib>=3.7,<4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

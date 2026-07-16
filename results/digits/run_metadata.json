@@ -1,0 +1,46 @@
+{
+  "dataset": "sklearn.datasets.load_digits",
+  "split_seed": 2026,
+  "adaptation_examples": 400,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "scenarios": [
+    "contrast",
+    "rotation",
+    "mixed"
+  ],
+  "ranks": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "adapter_learning_rates": [
+    0.003,
+    0.01,
+    0.03
+  ],
+  "magnitude_learning_rates": [
+    0.003,
+    0.01,
+    0.03
+  ],
+  "full_finetuning_learning_rates": [
+    0.0001,
+    0.0003,
+    0.001
+  ],
+  "base_clean_test_metrics": {
+    "accuracy": 0.975,
+    "macro_f1": 0.9750206860286077,
+    "nll": 0.1289611667766119
+  },
+  "elapsed_seconds": 273.87286281585693,
+  "torch_version": "2.5.1+cpu",
+  "quick": false
+}
