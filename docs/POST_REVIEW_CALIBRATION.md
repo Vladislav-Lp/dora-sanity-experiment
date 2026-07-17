@@ -1,7 +1,7 @@
 # Post-review claim calibration
 
 Date: 2026-07-17  
-Release: `0.3.1`
+Release: `0.3.2`
 
 ## Purpose
 
@@ -17,14 +17,23 @@ An external evidence-focused review found no fatal implementation or design erro
 - the LoRA+ `B/A=16` learning-rate ratio is identified as fixed rather than exhaustively tuned;
 - Conv2d is described using the implementation's output-filter-as-row convention, and DoRA's exact no-op initialization is stated as `B=0`, `m=||W₀||`;
 - notebook provenance is described as in-process execution with embedded outputs and `nbformat` validation.
+- the final A1 poster shortens and enlarges the lower-right control summary, and labels the repository QR as a private review link with access available on request; repository visibility is unchanged.
 
 ## What did not change
 
 - no model was retrained;
+- no estimate, interval, p-value, figure, or conclusion changed in the `0.3.2` poster-accessibility patch;
 - no test result affected hyperparameter or rank selection;
 - `docs/EXTENSION_PROTOCOL.md` remains the unchanged historical frozen protocol;
 - the raw result tables, negative controls, failed synthetic initializations, and limitations remain visible;
 - the primary comparison families were not redefined after seeing the results.
+
+## Final verification
+
+- all `660` confirmatory rows were reloaded from the MLP and CNN raw CSV files;
+- the independently regenerated comparison table matches the committed means, paired confidence intervals, effect sizes, paired t-tests, Wilcoxon tests, win/tie/loss counts, and within-family Holm adjustments;
+- the confirmatory keys contain no duplicate `(architecture, scenario, seed, method_id)` rows and no missing target accuracies;
+- all `11` deterministic implementation tests pass, including Linear/Conv2d no-op initialization, parameter counts, the LoRA+ learning-rate ratio, data-split checks, and synthetic controls.
 
 ## Evidence boundary
 

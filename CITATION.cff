@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this research package, please cite it using the metadata below."
 title: "When does DoRA help? Geometry, budgets, and held-seed few-shot adaptation"
 type: software
-version: 0.3.1
+version: 0.3.2
 date-released: 2026-07-17
 authors:
   - family-names: Lapin

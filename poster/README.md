@@ -12,4 +12,4 @@ The official AIRI 2026 header, two-column frame, sponsor marks, and QR area are 
 2. `data_regime_accuracy` - nested 50/100/200/400-example sweep;
 3. `synthetic_optimization` - feasible capacity versus actual optimization.
 
-The QR points to this repository. If the repository remains private, viewers who are not collaborators will not be able to open it; repository visibility is intentionally not changed by the project code.
+The QR is explicitly labeled as a private review link and points to this repository. Viewers who are not collaborators will need to request access; repository visibility is intentionally not changed by the project code.
