@@ -1,0 +1,51 @@
+{
+  "protocol": "docs/EXTENSION_PROTOCOL.md",
+  "selection_source": "results/confirmatory_mlp/selected_configs.csv",
+  "scenario": "mixed",
+  "seeds": [
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    318,
+    319,
+    320
+  ],
+  "per_class_values": [
+    5,
+    10,
+    20,
+    40
+  ],
+  "adaptation_examples": [
+    50,
+    100,
+    200,
+    400
+  ],
+  "nested_subsets": true,
+  "same_corrupted_sample_realization_across_budgets": true,
+  "base_clean_test_metrics": {
+    "accuracy": 0.975,
+    "macro_f1": 0.9750206860286077,
+    "nll": 0.12896116077899933
+  },
+  "max_epochs": 120,
+  "patience": 18,
+  "elapsed_seconds": 126.6274003982544,
+  "torch_version": "2.13.0+cu130",
+  "quick": false
+}

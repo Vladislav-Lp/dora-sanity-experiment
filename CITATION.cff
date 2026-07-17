@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this research package, please cite it using the metadata below."
+title: "When does DoRA help? Geometry, budgets, and confirmatory few-shot adaptation"
+type: software
+version: 0.3.0
+date-released: 2026-07-17
+authors:
+  - family-names: Lapin
+    given-names: Vladislav
+repository-code: "https://github.com/Vladislav-Lp/dora-sanity-experiment"
+keywords:
+  - DoRA
+  - LoRA
+  - parameter-efficient fine-tuning
+  - domain adaptation
+  - reproducible research

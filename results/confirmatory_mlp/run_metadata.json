@@ -1,0 +1,69 @@
+{
+  "protocol": "docs/EXTENSION_PROTOCOL.md",
+  "architecture": "mlp",
+  "dataset": "sklearn.datasets.load_digits",
+  "split_seed": 2026,
+  "adaptation_examples": 400,
+  "pilot_seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "confirmatory_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120
+  ],
+  "scenarios": [
+    "contrast",
+    "rotation",
+    "mixed"
+  ],
+  "standard_learning_rates": [
+    0.003,
+    0.01,
+    0.03
+  ],
+  "full_learning_rates": [
+    0.0001,
+    0.0003,
+    0.001
+  ],
+  "lora_plus_a_learning_rates": [
+    0.0003,
+    0.001,
+    0.003
+  ],
+  "lora_plus_b_over_a_ratio": 16.0,
+  "pretrain_epochs": 160,
+  "max_adaptation_epochs": 120,
+  "patience": 18,
+  "base_clean_test_metrics": {
+    "accuracy": 0.975,
+    "macro_f1": 0.9750206860286077,
+    "nll": 0.12896116077899933
+  },
+  "test_evaluated_only_after_all_selections": true,
+  "elapsed_seconds": 577.6410653591156,
+  "torch_version": "2.13.0+cu130",
+  "quick": false
+}

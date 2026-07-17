@@ -1,0 +1,7 @@
+{
+  "status": "ready_to_share",
+  "issues": [],
+  "data_sweep_rows": 400,
+  "synthetic_optimization_rows": 150,
+  "inference_unit_for_synthetic": "problem_seed"
+}
