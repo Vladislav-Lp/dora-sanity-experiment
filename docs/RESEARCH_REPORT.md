@@ -1,12 +1,12 @@
-# When does DoRA help? A controlled confirmatory study
+# When does DoRA help? A controlled held-seed study
 
 ## Technical summary
 
-Weight-Decomposed Low-Rank Adaptation (DoRA) separates each weight row's magnitude from a low-rank directional update. The initial AIRI project demonstrated this mechanism on one target explicitly constructed in the DoRA family. The present extension asks a harder and narrower question: **does the decomposition provide a reproducible practical advantage after stronger LoRA baselines, nearly matched parameter budgets, new seeds, a second architecture, and changes in target-data volume?**
+Weight-Decomposed Low-Rank Adaptation (DoRA) separates each weight row's magnitude from a low-rank directional update. The initial AIRI project demonstrated this mechanism on one target explicitly constructed in the DoRA family. The present extension asks a harder and narrower question: **under which controlled shifts does the decomposition produce a positive held-seed estimate after stronger LoRA baselines, nearly matched parameter budgets, new adaptation seeds, a second architecture, and changes in target-data volume?**
 
-The answer is conditional. On the main mixed domain shift, DoRA improves target-test accuracy over ordinary LoRA by `+1.06 percentage points` in the MLP (95% paired CI `[−0.07, +2.18]`, `n=20`) and `+0.92 pp` in the CNN (`[+0.10, +1.73]`, `n=10`). The sign and scale therefore replicate across two backbones. In the MLP, DoRA also exceeds LoRA+ by `+1.43 pp` (`[+0.45, +2.41]`) and a nearly parameter-matched LoRA allocation by `+0.53 pp` (`[−0.29, +1.35]`). However, Holm correction across the nine declared MLP primary comparisons yields adjusted `p=0.382`, `0.051`, and `0.773`, respectively. The correct conclusion is a **consistent practical signal with incomplete family-wise statistical certainty**, not universal superiority.
+The answer is conditional. On the main mixed domain shift, DoRA improves target-test accuracy over ordinary LoRA by `+1.06 percentage points` in the MLP (95% paired CI `[−0.07, +2.18]`, `n=20`) and `+0.92 pp` in the CNN (`[+0.10, +1.73]`, `n=10`). These are same-sign estimates conditional on one fixed pretrained checkpoint per architecture, not an external replication. In the MLP, DoRA also exceeds LoRA+ by `+1.43 pp` (`[+0.45, +2.41]`) and a nearly parameter-matched LoRA allocation by `+0.53 pp` (`[−0.29, +1.35]`). Holm correction across the nine declared MLP primary comparisons yields adjusted `p=0.382213`, `0.050935`, and `0.772762`, respectively; the LoRA+ value is above `0.05`. The correct conclusion is **positive conditional point estimates with incomplete family-wise statistical certainty**, not universal superiority.
 
-The counterexamples are equally informative. Magnitude-only adaptation is best on the contrast control with 202 trainable MLP parameters, and parameter-matched LoRA ties DoRA on MLP rotation. The study therefore supports a geometry-dependent adapter choice: magnitude-only for scale-like shifts, LoRA when an additive low-rank update suffices, and DoRA when direction and heterogeneous magnitude must change together.
+The counterexamples are equally informative. Magnitude-only adaptation is best on the contrast control with 202 trainable MLP parameters, and parameter-matched LoRA ties DoRA on MLP rotation. The study therefore motivates a geometry-dependent hypothesis for future testing: magnitude-only may suit scale-like shifts, LoRA may suffice for additive low-rank changes, and DoRA may help when direction and heterogeneous magnitude must change together.
 
 ## Why the original result was not enough
 
@@ -47,7 +47,7 @@ V = W₀ + (α/r)BA,
 W = m ⊙ V / ||V||row.
 ```
 
-`m` contains one trainable magnitude per output row/filter. Matrix `B` is initialized to zero, so LoRA and DoRA reproduce the base model before training. The directional norm is detached during backpropagation, following the published and PEFT optimization rule. `α=r`, hence `α/r=1` for every rank.
+`m` contains one trainable magnitude per output row/filter. Matrix `B` is initialized to zero and DoRA sets `m=||W₀||` row-wise, so LoRA and DoRA reproduce the base model exactly before training. The directional norm is detached during backpropagation, following the published and PEFT optimization rule. `α=r`, hence `α/r=1` for every rank.
 
 The implementation supports both `Linear` and `Conv2d`. A convolutional filter is flattened into one row for its low-rank update and magnitude. Unit tests verify exact no-op initialization for both module types, expected parameter counts, LoRA+ learning-rate groups, nested subsets, deterministic data splitting, and synthetic controls.
 
@@ -95,7 +95,7 @@ The extension decisions were frozen in `docs/EXTENSION_PROTOCOL.md` before new t
 - maximum 120 epochs, AdamW, weight decay `1e−4`, patience 18;
 - selection: highest mean target-validation accuracy, then lowest mean validation NLL.
 
-Every method/shift configuration is frozen before confirmatory target-test evaluation. Pilot tables contain no target-test columns, and the validator rejects them if they appear.
+Every method/shift configuration is frozen before held-seed target-test evaluation. Pilot tables contain no target-test columns, and the validator rejects them if they appear.
 
 ### Baselines and parameter controls
 
@@ -110,15 +110,15 @@ Every method/shift configuration is frozen before confirmatory target-test evalu
 
 For the MLP, uniform LoRA has 1,832 trainable parameters and uniform DoRA 2,034. Validation selects the matched LoRA allocation from `(5,4,4)`, `(4,5,4)`, `(4,4,6)`; the closest candidates use 2,024 parameters. Budgeted DoRA is selected from `(4,3,3)`, `(3,4,3)`, `(3,3,6)` and never exceeds 1,832 parameters.
 
-### Confirmatory seeds and statistics
+### Held-seed evaluation and statistics
 
 - MLP: seeds `101..120`, 20 paired observations per method/shift;
 - CNN: seeds `201..210`, 10 paired observations;
 - data-regime sweep: seeds `301..320`.
 
-For each declared comparison the analysis reports mean paired difference, 95% paired Student t interval, paired effect size `d_z`, paired t-test, Wilcoxon signed-rank test, wins/ties/losses, and Holm-adjusted p-values. The MLP primary family contains DoRA versus LoRA, LoRA+, and budget-matched LoRA across all three shifts (`m=9`). CNN replication is corrected separately (`m=6`).
+For each declared comparison the analysis reports mean paired difference, 95% paired Student t interval, paired effect size `d_z`, paired t-test, Wilcoxon signed-rank test, wins/ties/losses, and Holm-adjusted p-values. The MLP primary family contains DoRA versus LoRA, LoRA+, and budget-matched LoRA across all three shifts (`m=9`). The CNN family is corrected separately (`m=6`). The predeclared budgeted-DoRA comparisons are descriptive and receive their own secondary-family correction (`m=3`); they are not used to rescue a primary result.
 
-## The mixed-shift signal replicates across backbones
+## Mixed-shift held-seed estimates are positive on both backbones
 
 ### Absolute performance
 
@@ -146,7 +146,7 @@ DoRA reaches essentially the same mean accuracy as full fine-tuning with 11.8% o
 
 The mixed effect has similar magnitude in two architectures. MLP favors DoRA in 15/20 seeds; CNN in 8/10. Contrast is slightly negative in both, which is consistent with its role as a negative control.
 
-The MLP ordinary-LoRA comparison has unadjusted `p=0.0637` and Holm-adjusted `p=0.382`. The CNN comparison has unadjusted `p=0.0318` and replication-family Holm `p=0.159`. The replicated direction is scientifically useful, but the corrected evidence remains insufficient for a universal binary claim.
+The MLP ordinary-LoRA comparison has unadjusted `p=0.063702` and Holm-adjusted `p=0.382213`. The CNN comparison has unadjusted `p=0.031791` and family-wise Holm `p=0.158955`. The same sign is a useful internal observation, but the corrected evidence remains inconclusive and does not establish cross-checkpoint replication.
 
 ## Stronger baselines narrow the interpretation
 
@@ -154,13 +154,15 @@ On MLP mixed shift:
 
 | Comparison | Mean Δ | 95% CI | `d_z` | Holm paired-t p | W/T/L |
 |---|---:|---:|---:|---:|---:|
-| DoRA − LoRA | +1.06 | [−0.07, +2.18] | 0.44 | 0.382 | 15/0/5 |
-| DoRA − LoRA+ | +1.43 | [+0.45, +2.41] | 0.69 | 0.051 | 14/1/5 |
-| DoRA − matched LoRA | +0.53 | [−0.29, +1.35] | 0.30 | 0.773 | 11/1/8 |
+| DoRA − LoRA | +1.06 | [−0.07, +2.18] | 0.44 | 0.382213 | 15/0/5 |
+| DoRA − LoRA+ | +1.43 | [+0.45, +2.41] | 0.69 | 0.050935 | 14/1/5 |
+| DoRA − matched LoRA | +0.53 | [−0.29, +1.35] | 0.30 | 0.772762 | 11/1/8 |
 
 The matched-budget result shows that the ordinary DoRA−LoRA point estimate is not explained solely by DoRA's extra magnitude parameters. Yet the wide interval also says that 20 seeds do not locate the matched effect precisely.
 
 LoRA+ is not superior in this setup. That should not be generalized beyond the chosen fixed `B/A=16` ratio: the LoRA+ paper and reference implementation treat the optimal ratio as task dependent. Here it is a strong declared optimizer baseline, not an exhaustive LoRA+ tuning study.
+
+The secondary budgeted-DoRA comparison is `+0.82 pp` versus LoRA, CI `[−0.22, +1.86]`, raw `p=0.115696`, and secondary-family Holm `p=0.347089`. It is reported for budget transparency and remains descriptive.
 
 ## The effect persists across target-data budgets
 
@@ -173,7 +175,7 @@ The mixed-shift data sweep reuses the already selected MLP configurations. For e
 | 200 | 70.65% | 69.74% | 68.90% | +0.92 [−0.12, +1.95] |
 | 400 | 74.86% | 74.17% | 73.32% | +0.69 [−0.02, +1.41] |
 
-DoRA−LoRA is positive at every declared budget, but every individual LoRA interval includes zero. DoRA's advantage over LoRA+ is larger (`+1.54` to `+2.83 pp`) and its paired-t Holm p-value is below 0.05 at all four budgets. These results support robustness of the practical pattern, not a claim that the effect increases monotonically with more data.
+DoRA−LoRA is positive at every declared budget, but every individual LoRA interval includes zero. DoRA's advantage over LoRA+ is larger (`+1.54` to `+2.83 pp`) and its paired-t Holm p-value is below 0.05 at all four budgets. Because these are supporting analyses conditional on the selected checkpoint and configuration, they show a same-sign pattern across budgets rather than an independent replication or a monotonic trend.
 
 ## Simple and negative results clarify the mechanism
 
@@ -216,18 +218,18 @@ At `γ=0`, LoRA and DoRA both satisfy the additive rank-matched positive control
 The extension contains 1,960 saved run records:
 
 - 510 MLP pilot rows, including 495 trained candidates;
-- 480 MLP confirmatory rows, including 420 trained models;
+- 480 MLP held-seed rows, including 420 trained models;
 - 240 CNN pilot rows, including 225 trained candidates;
-- 180 CNN confirmatory rows, including 150 trained models;
+- 180 CNN held-seed rows, including 150 trained models;
 - 400 trained data-regime models;
 - 150 synthetic optimization runs.
 
-Eleven unit tests pass. Independent analysis scripts verify:
+Eleven unit tests pass. Separate analysis scripts verify:
 
 - complete seed, scenario, method, and budget coverage;
 - no duplicate paired keys;
 - no target-test fields in pilot tables;
-- exact equality between selected validation configurations and confirmatory configurations;
+- exact equality between selected validation configurations and held-seed configurations;
 - finite metrics and valid ranges;
 - expected parameter counts;
 - oracle invariance across synthetic initialization duplicates;
@@ -251,11 +253,11 @@ Both `results/extension_validation.json` and `results/robustness_validation.json
 
 The highest-value next step is a separately preregistered external replication with the official PEFT stack on a small pretrained transformer. It should compare LoRA, LoRA+, rsLoRA, and DoRA on identical target modules, use matched parameter budgets, tune only on validation, vary at least several pretrained checkpoints, and name one primary task/metric before test evaluation.
 
-The present project should not add an unrun transformer result to the poster as future-looking decoration. Its current contribution is already complete and defensible: a mechanism result, trained optimization diagnostic, real-data confirmation, architecture replication, data-regime robustness, stronger baselines, and explicit uncertainty.
+The present project should not add an unrun transformer result to the poster as future-looking decoration. Its current contribution is already complete and defensible for its scope: a mechanism result, trained optimization diagnostic, protocol-frozen held-seed evaluation, a second-backbone check, data-regime sensitivity analysis, stronger baselines, and explicit uncertainty.
 
 ## Conclusion
 
-DoRA is not a universally better LoRA. It is a useful inductive bias when adaptation requires coordinated directional change and heterogeneous weight-magnitude adjustment. In the main mixed shift, the benefit is about one percentage point and repeats across two backbones and four data budgets. In simpler or differently structured shifts, the gain disappears and a cheaper adapter can win. This conditional result is smaller than the original synthetic ratio, but it is far more credible and more useful.
+DoRA is not a universally better LoRA. The results support the hypothesis that it can be a useful inductive bias when adaptation requires coordinated directional change and heterogeneous weight-magnitude adjustment. In the main mixed shift, the conditional point estimate is about one percentage point and has the same sign on two fixed backbones and four data budgets; multiplicity-adjusted evidence remains inconclusive. In simpler or differently structured shifts, the gain disappears and a cheaper adapter can win. This bounded result is smaller than the original synthetic ratio, but it is far more credible and more useful.
 
 ## References
 

@@ -101,13 +101,13 @@ def main() -> None:
         nbf.v4.new_markdown_cell(
             """# When does DoRA help?
 
-**A controlled confirmatory study of adapter geometry, parameter budgets, and few-shot domain adaptation**  
+**A controlled held-seed study of adapter geometry, parameter budgets, and few-shot domain adaptation**  
 Vladislav Lapin · MIPT FPMI / AI360 · AIRI Summer School 2026
 
 ## Technical summary
 
-- Mixed-shift DoRA−LoRA is **+1.06 pp** in the MLP (`n=20`) and **+0.92 pp** in the CNN (`n=10`).
-- The sign replicates across two backbones and all four target-data budgets, but Holm-corrected individual tests are not uniformly decisive.
+- Held-seed DoRA−LoRA estimates are **+1.06 pp** in the MLP and **+0.92 pp** in the CNN; Holm-adjusted paired-t `p=0.382213` and `0.158955` remain inconclusive.
+- The same sign appears on two fixed backbones and all four target-data budgets, conditional on one pretrained checkpoint per architecture.
 - Magnitude-only wins the pure-contrast control; parameter-matched LoRA ties DoRA on MLP rotation.
 - Trained synthetic DoRA usually realizes its capacity advantage, but convergence falls to 88% under the strongest magnitude shift.
 
@@ -117,7 +117,7 @@ The contribution is a conditional result with uncertainty, not a claim that DoRA
         nbf.v4.new_markdown_cell(
             """## Protocol and evidence boundary
 
-Pilot seeds select learning rates and MLP rank allocations using target validation only. Confirmatory seeds are disjoint, and target test is evaluated after every configuration is frozen. The real-data benchmark uses `sklearn Digits`; it is not an LLM reproduction. The exact protocol is saved in `docs/EXTENSION_PROTOCOL.md`.
+Pilot seeds select learning rates and MLP rank allocations using target validation only. Held-seed adaptation seeds are disjoint, and target test is evaluated after every configuration is frozen. They quantify subset/corruption/optimization variability conditional on one fixed pretrained checkpoint per architecture. The target split existed in the exploratory phase, so this is a protocol-frozen internal confirmation, not an untouched external replication. The real-data benchmark uses `sklearn Digits`; it is not an LLM reproduction. The exact historical protocol is saved unchanged in `docs/EXTENSION_PROTOCOL.md`.
 """
         ),
         nbf.v4.new_code_cell(
@@ -145,9 +145,9 @@ selected[[
 ]].sort_values(["architecture", "scenario", "method_id"]).round(4)"""
         ),
         nbf.v4.new_markdown_cell(
-            """## Confirmatory result: the mixed effect repeats across backbones
+            """## Held-seed result: mixed-shift estimates are positive on both backbones
 
-Intervals below are paired within architecture and seed. Similar point estimates in the MLP and CNN are stronger evidence than one favorable mean, while the intervals and adjusted p-values prevent overclaiming.
+Intervals below are paired within architecture and adaptation seed. Similar point estimates in the MLP and CNN are useful internal evidence, while the intervals and adjusted p-values prevent describing this as family-wise confirmation or cross-checkpoint replication.
 """
         ),
         nbf.v4.new_code_cell(
@@ -160,7 +160,12 @@ comparisons.query("comparison == 'dora_vs_lora'")[[
         nbf.v4.new_code_cell(
             """Image(filename=ROOT / "figures" / "extension" / "confirmatory_dora_minus_lora.png", width=950, embed=True)"""
         ),
-        nbf.v4.new_markdown_cell("## Stronger and nearly parameter-matched baselines"),
+        nbf.v4.new_markdown_cell(
+            """## Stronger and nearly parameter-matched baselines
+
+The fixed LoRA+ `B/A=16` ratio is a declared optimizer baseline, not an exhaustive LoRA+ tuning study. Its mixed-shift Holm-adjusted value is `p=0.050935`, above `0.05`. Budgeted DoRA is a separate descriptive secondary comparison (`+0.82 pp`, CI `[−0.22, +1.86]`, raw `p=0.115696`, secondary-family Holm `p=0.347089`) and is not used to rescue the primary claim.
+"""
+        ),
         nbf.v4.new_code_cell(
             """mixed_primary = comparisons.query(
     "architecture == 'mlp' and scenario == 'mixed' and numerator == 'dora'"
@@ -207,11 +212,11 @@ synthetic.round(7)"""
         nbf.v4.new_markdown_cell(
             """## Interpretation and limits
 
-1. **Geometry matters.** Mixed direction+magnitude change is the setting in which DoRA is consistently useful.
+1. **Geometry is a testable hypothesis.** Mixed direction+magnitude change is the setting in which DoRA has the clearest positive conditional point estimate here.
 2. **Parameter count is not the whole explanation.** DoRA remains ahead of a LoRA allocation within ten parameters of its MLP budget, although the interval is wide.
 3. **Capacity is not optimization.** The synthetic target is exactly representable, yet strong magnitude shift creates failed DoRA initializations.
 4. **Simpler can be better.** Magnitude-only adaptation wins on contrast, and matched LoRA closes rotation.
-5. **External validity remains open.** One fixed Digits checkpoint per architecture is not transformer-scale evidence.
+5. **External validity remains open.** One fixed Digits checkpoint per architecture is neither cross-checkpoint replication nor transformer-scale evidence.
 
 The next high-value study is an external, separately frozen PEFT experiment on a small pretrained transformer with matched target modules and multiple base checkpoints.
 """

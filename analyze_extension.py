@@ -243,8 +243,6 @@ def paired_comparisons(runs: pd.DataFrame) -> pd.DataFrame:
     comparisons["paired_t_p_holm"] = np.nan
     comparisons["wilcoxon_p_holm"] = np.nan
     for family, indices in comparisons.groupby("family").groups.items():
-        if family == "mlp_secondary":
-            continue
         comparisons.loc[indices, "paired_t_p_holm"] = holm_adjust(
             comparisons.loc[indices, "paired_t_p"]
         )
@@ -268,6 +266,10 @@ def write_validation_report(
         & (comparisons["numerator"] == "dora")
         & (comparisons["comparator"].isin(["lora", "lora_plus", "lora_matched"]))
     ]
+    secondary = comparisons[
+        (comparisons["family"] == "mlp_secondary")
+        & (comparisons["scenario"] == "mixed")
+    ].iloc[0]
     lines = [
         "# Extension validation report",
         "",
@@ -279,6 +281,7 @@ def write_validation_report(
         "- Pilot tables contain validation metrics only; target-test columns are rejected by the validator.",
         "- Every confirmatory row is paired by scenario and seed, and its allocation/LR is reconciled with the frozen selection table.",
         "- Accuracy, macro-F1, NLL, parameter counts, duplicate keys, method coverage, and seed coverage are checked from raw rows.",
+        "- Holm correction is applied separately to the predeclared MLP primary (`m=9`), CNN (`m=6`), and descriptive MLP secondary (`m=3`) families.",
         "",
         "## Issues found",
         "",
@@ -302,6 +305,23 @@ def write_validation_report(
             f"[{row.ci95_low_pp:+.2f}, {row.ci95_high_pp:+.2f}] | "
             f"{row.paired_t_p_holm:.4g} | {row.wins}/{row.ties}/{row.losses} |"
         )
+    lines.extend(
+        [
+            "",
+            "## Descriptive secondary-family spot check",
+            "",
+            "The budgeted-DoRA comparison was declared secondary and is not used to rescue the primary claim.",
+            "",
+            "| Comparison | Mean Δ (pp) | 95% CI | Raw p | Secondary-family Holm p | W/T/L |",
+            "|---|---:|---:|---:|---:|---:|",
+            (
+                f"| budgeted DoRA − LoRA (mixed) | {secondary.mean_delta_pp:+.2f} | "
+                f"[{secondary.ci95_low_pp:+.2f}, {secondary.ci95_high_pp:+.2f}] | "
+                f"{secondary.paired_t_p:.4g} | {secondary.paired_t_p_holm:.4g} | "
+                f"{secondary.wins}/{secondary.ties}/{secondary.losses} |"
+            ),
+        ]
+    )
     lines.extend(
         [
             "",

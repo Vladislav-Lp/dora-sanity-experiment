@@ -79,7 +79,7 @@ def confirmatory_deltas() -> None:
             zorder=3,
         )
         ax.set_yticks(y, [labels[item] for item in scenario_order])
-        ax.set_title(f"{architecture.upper()} · n={n_pairs} paired seeds", loc="left", fontweight="bold")
+        ax.set_title(f"{architecture.upper()} · n={n_pairs} held seeds", loc="left", fontweight="bold")
         ax.grid(axis="x", color=GRID, linewidth=0.8)
         ax.set_axisbelow(True)
         for scenario, x, yy in zip(scenario_order, means, y):
@@ -95,11 +95,11 @@ def confirmatory_deltas() -> None:
     axes[0].set_xlim(-1.5, 2.6)
     for ax in axes:
         ax.set_xlabel("DoRA − LoRA test accuracy (percentage points)")
-    fig.suptitle("Confirmatory paired effects across two backbones", x=0.07, ha="left", fontweight="bold")
+    fig.suptitle("Held-seed paired estimates on two fixed backbones", x=0.07, ha="left", fontweight="bold")
     fig.text(
         0.07,
         0.90,
-        "Mean and 95% paired t interval; configurations selected on validation before test evaluation",
+        "Mean and 95% paired t interval; one fixed pretrained checkpoint per backbone",
         color=MUTED,
         fontsize=9.5,
     )
@@ -153,7 +153,7 @@ def mixed_comparators() -> None:
     ax.text(
         0.0,
         1.01,
-        "20 paired confirmatory seeds · 95% t intervals · Holm family includes 9 primary tests",
+        "20 held adaptation seeds · 95% t intervals · Holm family includes 9 primary tests",
         transform=ax.transAxes,
         color=MUTED,
         fontsize=9.2,
@@ -212,7 +212,7 @@ def data_regime_accuracy() -> None:
     ax.text(
         0.0,
         1.01,
-        "20 paired seeds · nested subsets · mean and 95% CI · focused y-axis",
+        "20 paired adaptation seeds · nested subsets · mean and 95% CI · focused y-axis",
         transform=ax.transAxes,
         color=MUTED,
         fontsize=9.2,
@@ -385,7 +385,7 @@ def mixed_accuracy_by_backbone() -> None:
     for ax in axes:
         ax.set_xlabel("Mixed-shift test accuracy, % (focused scale)")
     fig.suptitle("Mixed-shift accuracy by backbone", x=0.07, ha="left", fontweight="bold")
-    fig.text(0.07, 0.90, "Mean and 95% CI across confirmatory seeds", color=MUTED, fontsize=9.5)
+    fig.text(0.07, 0.90, "Mean and 95% CI across held adaptation seeds", color=MUTED, fontsize=9.5)
     fig.tight_layout(rect=[0, 0.01, 1, 0.86], w_pad=2.0)
     save(fig, "mixed_accuracy_by_backbone")
 

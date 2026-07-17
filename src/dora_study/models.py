@@ -237,7 +237,7 @@ class AdaptedMLP(nn.Module):
 
 
 class BaseCNN(nn.Module):
-    """Compact architecture replication for 8x8 Digits images."""
+    """Compact second-backbone check for 8x8 Digits images."""
 
     def __init__(self) -> None:
         super().__init__()
