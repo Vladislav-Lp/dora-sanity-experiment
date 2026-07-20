@@ -17,7 +17,7 @@ An external evidence-focused review found no fatal implementation or design erro
 - the LoRA+ `B/A=16` learning-rate ratio is identified as fixed rather than exhaustively tuned;
 - Conv2d is described using the implementation's output-filter-as-row convention, and DoRA's exact no-op initialization is stated as `B=0`, `m=||W₀||`;
 - notebook provenance is described as in-process execution with embedded outputs and `nbformat` validation.
-- the final A1 poster shortens and enlarges the lower-right control summary, and labels the repository QR as a private review link with access available on request; repository visibility is unchanged.
+- the final A1 poster shortens and enlarges the lower-right control summary, labels the repository QR as `CODE + DATA`, and identifies the destination as the public GitHub repository.
 
 ## What did not change
 
