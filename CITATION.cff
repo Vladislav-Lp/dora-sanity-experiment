@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use this research package, please cite it using the metadata below."
-title: "When does DoRA help? Geometry, budgets, and held-seed few-shot adaptation"
+message: "Если вы используете этот исследовательский пакет, пожалуйста, цитируйте его с помощью приведённых ниже метаданных."
+title: "Когда DoRA помогает? Геометрия, бюджеты параметров и few-shot-адаптация на удержанных сидах"
 type: software
 version: 0.3.2
 date-released: 2026-07-17
@@ -11,6 +11,6 @@ repository-code: "https://github.com/Vladislav-Lp/dora-sanity-experiment"
 keywords:
   - DoRA
   - LoRA
-  - parameter-efficient fine-tuning
-  - domain adaptation
-  - reproducible research
+  - параметрически эффективное дообучение
+  - адаптация к предметной области
+  - воспроизводимое исследование

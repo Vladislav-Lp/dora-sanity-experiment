@@ -1,15 +1,15 @@
-# AIRI 2026 poster
+# Плакат AIRI 2026
 
-The poster is supplied in two equivalent A1 portrait formats:
+Плакат представлен в двух эквивалентных портретных форматах A1:
 
-- `Lapin_Vladislav_DoRA_AIRI_2026.pptx` - editable PowerPoint source;
-- `Lapin_Vladislav_DoRA_AIRI_2026.pdf` - print-ready ISO A1 export (`594 × 841 mm`);
-- `poster_preview.png` - lightweight GitHub preview.
+- `Lapin_Vladislav_DoRA_AIRI_2026.pptx` — редактируемый исходник PowerPoint;
+- `Lapin_Vladislav_DoRA_AIRI_2026.pdf` — готовый к печати экспорт ISO A1 (`594 × 841 mm`);
+- `poster_preview.png` — облегчённый файл предпросмотра для GitHub.
 
-The official AIRI 2026 header, two-column frame, sponsor marks, and QR area are preserved. The result figure is assembled from the validated project outputs in `figures/extension/`:
+Официальная шапка AIRI 2026, двухколоночная компоновка, логотипы партнёров и область QR-кода сохранены. Фигура с результатами собрана из провалидированных выходных данных проекта в `figures/extension/`:
 
-1. `confirmatory_dora_minus_lora` - held-seed paired MLP/CNN estimates (Holm `p=0.382213` and `0.158955`);
-2. `data_regime_accuracy` - nested 50/100/200/400-example sweep;
-3. `synthetic_optimization` - feasible capacity versus actual optimization.
+1. `confirmatory_dora_minus_lora` — парные оценки MLP/CNN на удержанных сидах (поправка Холма: `p=0.382213` и `0.158955`);
+2. `data_regime_accuracy` — перебор вложенных объёмов данных: 50/100/200/400 примеров;
+3. `synthetic_optimization` — допустимая представительная способность против фактической оптимизации.
 
-The QR is explicitly labeled as a private review link and points to this repository. Viewers who are not collaborators will need to request access; repository visibility is intentionally not changed by the project code.
+QR-код явно обозначен как приватная ссылка для рецензирования и ведёт в этот репозиторий. Зрителям, которые не являются соавторами репозитория, потребуется запросить доступ; код проекта намеренно не меняет видимость репозитория.

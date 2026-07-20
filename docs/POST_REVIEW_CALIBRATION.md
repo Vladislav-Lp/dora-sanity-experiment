@@ -1,40 +1,40 @@
-# Post-review claim calibration
+# Калибровка формулировок после рецензии
 
-Date: 2026-07-17  
-Release: `0.3.2`
+Дата: 2026-07-17  
+Релиз: `0.3.2`
 
-## Purpose
+## Назначение
 
-An external evidence-focused review found no fatal implementation or design error, but identified language that could overstate what the saved experiment establishes. This revision calibrates the claims without rerunning models, changing the frozen protocol, adding post-hoc hypotheses, or hiding negative results.
+Внешняя рецензия, сосредоточенная на доказательствах, не обнаружила критической ошибки реализации или дизайна, но выявила формулировки, способные преувеличить то, что устанавливает сохранённый эксперимент. В этой версии формулировки откалиброваны без повторного обучения моделей, изменения зафиксированного протокола, добавления гипотез после анализа данных (post-hoc) или сокрытия отрицательных результатов.
 
-## What changed
+## Что изменилось
 
-- “replication” and “repeatable advantage” were replaced with “held-seed internal confirmation,” “same-sign estimate,” or “second-backbone check” where appropriate;
-- the estimand is explicit: adaptation seeds vary target subsets, corruptions, and optimization while conditioning on one fixed pretrained checkpoint per architecture;
-- exact mixed-shift raw and Holm-adjusted paired-t values are shown: MLP `0.063702 → 0.382213`, CNN `0.031791 → 0.158955`;
-- the MLP DoRA−LoRA+ adjusted value is shown as `p=0.050935`, explicitly above `0.05`;
-- the predeclared budgeted-DoRA comparisons receive a separate secondary-family Holm correction (`m=3`); the mixed result is `+0.82 pp`, CI `[−0.22, +1.86]`, raw `p=0.115696`, adjusted `p=0.347089`, and remains descriptive;
-- the LoRA+ `B/A=16` learning-rate ratio is identified as fixed rather than exhaustively tuned;
-- Conv2d is described using the implementation's output-filter-as-row convention, and DoRA's exact no-op initialization is stated as `B=0`, `m=||W₀||`;
-- notebook provenance is described as in-process execution with embedded outputs and `nbformat` validation.
-- the final A1 poster shortens and enlarges the lower-right control summary, and labels the repository QR as a private review link with access available on request; repository visibility is unchanged.
+- слова «репликация» и «воспроизводимое преимущество» там, где это уместно, заменены на «внутреннее подтверждение на удержанных сидах», «оценка одного знака» или «проверка на второй базовой архитектуре»;
+- оцениваемая величина (estimand) указана явно: сиды адаптации варьируют целевые подвыборки, искажения и оптимизацию при условии одного фиксированного предобученного чекпоинта для каждой архитектуры;
+- приведены точные исходные и скорректированные методом Холма p-значения парного t-критерия для смешанного сдвига: MLP `0.063702 → 0.382213`, CNN `0.031791 → 0.158955`;
+- для MLP DoRA−LoRA+ указано: скорректированное методом Холма p-значение парного t-критерия составляет `0.050935`, что выше `0.05`;
+- заранее заявленные сравнения DoRA в рамках бюджета получают отдельную поправку Холма для вторичной семьи сравнений (`m=3`); результат для смешанного сдвига составляет `+0.82 п.п.`, ДИ `[−0.22, +1.86]`, исходное `p=0.115696`, скорректированное `p=0.347089` и остаётся описательным;
+- отношение скоростей обучения LoRA+ `B/A=16` обозначено как фиксированное, а не исчерпывающе настроенное;
+- Conv2d описывается с помощью используемой в реализации конвенции «выходной фильтр как строка», а точная инициализация DoRA без эффекта (no-op) задана как `B=0`, `m=||W₀||`;
+- происхождение выполнения ноутбука описывается как выполнение в текущем процессе (без ядра Jupyter) со встроенными результатами и валидацией `nbformat`;
+- в итоговом плакате A1 сокращена и увеличена нижняя правая сводка контрольных результатов, а QR-код репозитория обозначен как приватная ссылка для рецензирования с доступом по запросу; видимость репозитория не изменена.
 
-## What did not change
+## Что не изменилось
 
-- no model was retrained;
-- no estimate, interval, p-value, figure, or conclusion changed in the `0.3.2` poster-accessibility patch;
-- no test result affected hyperparameter or rank selection;
-- `docs/EXTENSION_PROTOCOL.md` remains the unchanged historical frozen protocol;
-- the raw result tables, negative controls, failed synthetic initializations, and limitations remain visible;
-- the primary comparison families were not redefined after seeing the results.
+- ни одна модель не была обучена повторно;
+- ни одна оценка, интервал, p-значение, фигура или формулировка вывода не изменилась в исправлении доступности плаката версии `0.3.2`;
+- ни один тестовый результат не повлиял на выбор гиперпараметров или ранга;
+- `docs/EXTENSION_PROTOCOL.md` остаётся неизменённым историческим зафиксированным протоколом;
+- необработанные таблицы результатов, негативные контроли, неудачные синтетические инициализации и ограничения остаются видимыми;
+- семьи основных сравнений не переопределялись после просмотра результатов.
 
-## Final verification
+## Итоговая проверка
 
-- all `660` confirmatory rows were reloaded from the MLP and CNN raw CSV files;
-- the independently regenerated comparison table matches the committed means, paired confidence intervals, effect sizes, paired t-tests, Wilcoxon tests, win/tie/loss counts, and within-family Holm adjustments;
-- the confirmatory keys contain no duplicate `(architecture, scenario, seed, method_id)` rows and no missing target accuracies;
-- all `11` deterministic implementation tests pass, including Linear/Conv2d no-op initialization, parameter counts, the LoRA+ learning-rate ratio, data-split checks, and synthetic controls.
+- все `660` подтверждающих строк были повторно загружены из необработанных CSV-файлов MLP и CNN;
+- независимо сформированная таблица сравнений совпадает с зафиксированными средними значениями, парными доверительными интервалами, величинами эффекта, результатами парных t-критериев, критериев знаковых рангов Уилкоксона, числом побед/равенств/поражений и поправками Холма внутри семей сравнений;
+- подтверждающие ключи не содержат дубликатов строк `(architecture, scenario, seed, method_id)` и пропущенных значений целевой точности;
+- пройдены все `11` детерминированных тестов реализации, включая инициализацию без эффекта (no-op) для Linear/Conv2d, число параметров, отношение скоростей обучения LoRA+, проверки разбиения данных и синтетические контрольные проверки.
 
-## Evidence boundary
+## Граница доказательств
 
-The study supports a conditional hypothesis: DoRA may help when a shift combines directional change with heterogeneous magnitude change. It does not establish universal superiority, pretraining-level variability, transformer-scale transfer, or external replication. A separately preregistered multi-checkpoint PEFT study is the appropriate next test.
+Исследование поддерживает условную гипотезу: DoRA может помогать, когда сдвиг сочетает изменение направления с неоднородным изменением величины. Оно не устанавливает универсального превосходства, вариативности на уровне предобучения, переноса в масштаб трансформеров или внешней (независимой) репликации. Подходящей следующей проверкой является отдельно предварительно зарегистрированное многочекпоинтное исследование PEFT.

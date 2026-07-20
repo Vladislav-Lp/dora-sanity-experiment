@@ -1,265 +1,265 @@
-# When does DoRA help? A controlled held-seed study
+# Когда DoRA помогает? Контролируемое исследование на удержанных сидах (held-seed)
 
-## Technical summary
+## Техническое резюме
 
-Weight-Decomposed Low-Rank Adaptation (DoRA) separates each weight row's magnitude from a low-rank directional update. The initial AIRI project demonstrated this mechanism on one target explicitly constructed in the DoRA family. The present extension asks a harder and narrower question: **under which controlled shifts does the decomposition produce a positive held-seed estimate after stronger LoRA baselines, nearly matched parameter budgets, new adaptation seeds, a second architecture, and changes in target-data volume?**
+DoRA (декомпозиция весов на направление и величину) отделяет величину каждой строки весов от низкорангового обновления направления. В первоначальном проекте AIRI этот механизм был продемонстрирован на одной целевой матрице, явно построенной в семействе DoRA. Настоящее расширение ставит более сложный и узкий вопрос: **при каких контролируемых сдвигах это разделение даёт положительную оценку на удержанных сидах после добавления более сильных базовых вариантов LoRA, почти согласованных бюджетов параметров, новых сидов адаптации, второй архитектуры и изменений объёма целевых данных?**
 
-The answer is conditional. On the main mixed domain shift, DoRA improves target-test accuracy over ordinary LoRA by `+1.06 percentage points` in the MLP (95% paired CI `[−0.07, +2.18]`, `n=20`) and `+0.92 pp` in the CNN (`[+0.10, +1.73]`, `n=10`). These are same-sign estimates conditional on one fixed pretrained checkpoint per architecture, not an external replication. In the MLP, DoRA also exceeds LoRA+ by `+1.43 pp` (`[+0.45, +2.41]`) and a nearly parameter-matched LoRA allocation by `+0.53 pp` (`[−0.29, +1.35]`). Holm correction across the nine declared MLP primary comparisons yields adjusted `p=0.382213`, `0.050935`, and `0.772762`, respectively; the LoRA+ value is above `0.05`. The correct conclusion is **positive conditional point estimates with incomplete family-wise statistical certainty**, not universal superiority.
+Ответ носит условный характер. На основном смешанном сдвиге предметной области DoRA повышает точность на целевой тестовой выборке по сравнению с обычной LoRA на `+1.06 п.п.` для MLP (парный 95%-й доверительный интервал (ДИ) `[−0.07, +2.18]`, `n=20`) и на `+0.92 п.п.` для CNN (`[+0.10, +1.73]`, `n=10`). Это оценки одного знака, условные на одном фиксированном предобученном чекпоинте для каждой архитектуры, а не внешняя (независимая) репликация. Для MLP DoRA также превосходит LoRA+ на `+1.43 п.п.` (`[+0.45, +2.41]`) и почти согласованное по параметрам распределение LoRA на `+0.53 п.п.` (`[−0.29, +1.35]`). После поправки Холма для девяти заявленных основных сравнений MLP скорректированные значения составляют соответственно `p=0.382213`, `0.050935` и `0.772762`; значение для LoRA+ выше `0.05`. Корректный вывод — **положительные условные точечные оценки при неполной статистической уверенности на уровне семьи сравнений**, а не универсальное превосходство.
 
-The counterexamples are equally informative. Magnitude-only adaptation is best on the contrast control with 202 trainable MLP parameters, and parameter-matched LoRA ties DoRA on MLP rotation. The study therefore motivates a geometry-dependent hypothesis for future testing: magnitude-only may suit scale-like shifts, LoRA may suffice for additive low-rank changes, and DoRA may help when direction and heterogeneous magnitude must change together.
+Контрпримеры столь же содержательны. Адаптация только величины (magnitude-only) даёт лучший результат на контрольном изменении контраста, используя 202 обучаемых параметра MLP, а согласованная по параметрам LoRA достигает того же результата, что и DoRA, при повороте для MLP. Поэтому исследование формирует зависящую от геометрии гипотезу для будущей проверки: адаптация только величины может подходить для сдвигов, близких к масштабированию, LoRA может быть достаточной для аддитивных низкоранговых изменений, а DoRA может помогать, когда направление и неоднородная величина должны изменяться совместно.
 
-## Why the original result was not enough
+## Почему первоначального результата было недостаточно
 
-The old project used one small matrix, rank 4, three seeds, and a target generated inside the DoRA parameterization. Its very large DoRA/LoRA error ratio was mathematically expected. It did not answer five questions required for a defensible research claim:
+В старом проекте использовались одна малая матрица, ранг 4, три сида и целевая матрица, сгенерированная внутри параметризации DoRA. Очень большое отношение ошибок DoRA/LoRA было математически ожидаемым. Этот эксперимент не отвечал на пять вопросов, необходимых для обоснованного исследовательского утверждения:
 
-1. Does LoRA recover the positive control when the update is genuinely additive and rank matched?
-2. Can DoRA learn the constructed solution from its standard no-op initialization, rather than merely represent it?
-3. Does the effect appear on real data with model training and held-out evaluation?
-4. Does it survive a stronger optimizer baseline and nearly equal parameter budgets?
-5. Is the result stable across random target subsets, data regimes, and architectures?
+1. Восстанавливает ли LoRA положительный контроль, когда обновление действительно аддитивно и согласовано по рангу?
+2. Может ли DoRA выучить построенное решение из стандартной инициализации без эффекта (no-op), а не только представить его?
+3. Проявляется ли эффект на реальных данных при обучении модели и оценке на отложенной выборке?
+4. Сохраняется ли он при более сильном базовом варианте оптимизации и почти равных бюджетах параметров?
+5. Устойчив ли результат к случайным целевым подвыборкам, режимам объёма данных и архитектурам?
 
-The extension addresses all five. It preserves the original mechanism study as an explanatory component, not as the headline downstream evidence.
+Расширение отвечает на все пять вопросов. Оно сохраняет первоначальное исследование механизма как поясняющий компонент, а не как ключевое свидетельство на прикладной задаче.
 
-## Research question and hypotheses
+## Исследовательский вопрос и гипотезы
 
-**Question.** Under which target-shift geometry and trainable-parameter budget does separating weight magnitude from direction improve low-rank adaptation?
+**Вопрос.** При какой геометрии целевого сдвига и каком бюджете обучаемых параметров отделение величины весов от направления улучшает низкоранговую адаптацию?
 
-The protocol-frozen hypotheses were:
+Гипотезы, зафиксированные протоколом:
 
-- **Additive positive control.** If `W★ = W₀ + ΔW` and `rank(ΔW) ≤ r`, rank-`r` LoRA should have no representational residual; DoRA should not receive an artificial advantage.
-- **Heterogeneous magnitude mechanism.** Row-wise scaling of `W₀ + ΔW` generally makes the required additive update higher rank. DoRA can encode the scaling in its magnitude vector, while fixed-rank LoRA retains residual error.
-- **Mixed-shift practical signal.** DoRA should be most useful when the target shift combines geometric and intensity/noise changes.
-- **Contrast negative control.** A nearly pure intensity rescaling may be handled by magnitude-only adaptation.
-- **No universal dominance.** Higher rank, a different backbone, or a simple shift may eliminate or reverse DoRA's advantage.
+- **Аддитивный положительный контроль.** Если `W★ = W₀ + ΔW` и `rank(ΔW) ≤ r`, у LoRA ранга `r` не должно быть остаточной ошибки представления; DoRA не должна получать искусственного преимущества.
+- **Механизм неоднородной величины.** Построчное масштабирование `W₀ + ΔW`, вообще говоря, повышает ранг необходимого аддитивного обновления. DoRA может закодировать масштабирование в своём векторе величины, тогда как LoRA фиксированного ранга сохраняет остаточную ошибку.
+- **Практический сигнал смешанного сдвига.** DoRA должна быть наиболее полезна, когда целевой сдвиг сочетает геометрические изменения с изменениями интенсивности и шума.
+- **Негативный контроль контраста.** Почти чистое изменение масштаба интенсивности может обрабатываться адаптацией только величины.
+- **Отсутствие универсального доминирования.** Более высокий ранг, другая базовая архитектура или простой сдвиг могут устранить или обратить преимущество DoRA.
 
-## Adapter specification
+## Спецификация адаптера
 
-For frozen base weight `W₀`, LoRA uses
+Для замороженной базовой матрицы весов `W₀` LoRA использует
 
 ```text
 W = W₀ + (α/r)BA.
 ```
 
-DoRA uses
+DoRA использует
 
 ```text
 V = W₀ + (α/r)BA,
 W = m ⊙ V / ||V||row.
 ```
 
-`m` contains one trainable magnitude per output row/filter. Matrix `B` is initialized to zero and DoRA sets `m=||W₀||` row-wise, so LoRA and DoRA reproduce the base model exactly before training. The directional norm is detached during backpropagation, following the published and PEFT optimization rule. `α=r`, hence `α/r=1` for every rank.
+`m` содержит по одной обучаемой величине на каждую выходную строку или фильтр. Матрица `B` инициализируется нулями, а DoRA задаёт `m=||W₀||` по строкам, поэтому до обучения LoRA и DoRA в точности воспроизводят базовую модель. Норма направления отделяется от графа вычислений при обратном распространении согласно опубликованному правилу оптимизации PEFT. `α=r`, следовательно, `α/r=1` для каждого ранга.
 
-The implementation supports both `Linear` and `Conv2d`. A convolutional filter is flattened into one row for its low-rank update and magnitude. Unit tests verify exact no-op initialization for both module types, expected parameter counts, LoRA+ learning-rate groups, nested subsets, deterministic data splitting, and synthetic controls.
+Реализация поддерживает и `Linear`, и `Conv2d`. Свёрточный фильтр разворачивается в одну строку для низкорангового обновления и величины. Модульные тесты проверяют точную инициализацию без эффекта (no-op) для обоих типов модулей, ожидаемое число параметров, группы скоростей обучения LoRA+, вложенные подвыборки, детерминированное разбиение данных и синтетические контрольные проверки.
 
-## Scope, data, and metric definitions
+## Рамки исследования, данные и определения метрик
 
-### Dataset and split
+### Набор данных и разбиение
 
-The real-data benchmark uses all 1,797 images in `sklearn.datasets.load_digits`. Pixel intensities are scaled to `[0,1]`. A fixed stratified split, seed 2026, contains:
+В модельной задаче на реальных данных используются все 1,797 изображений из `sklearn.datasets.load_digits`. Интенсивности пикселей масштабируются в `[0,1]`. Фиксированное стратифицированное разбиение с сидом 2026 содержит:
 
-- 1,077 source-training examples;
-- 360 target-validation examples;
-- 360 target-test examples.
+- 1,077 исходных обучающих примеров;
+- 360 целевых валидационных примеров;
+- 360 целевых тестовых примеров.
 
-The same labels and split are used for every method. Validation and test corruptions are fixed per scenario. Adaptation subsets and their training corruption vary by paired seed.
+Для каждого метода используются одинаковые метки и разбиение. Искажения валидационной и тестовой выборок фиксированы для каждого сценария. Подвыборки для адаптации и их обучающие искажения изменяются в зависимости от парного сида.
 
-### Backbones
+### Базовые архитектуры
 
-- **MLP:** `64 → 128 → 64 → 10`, GELU, three adapted linear layers, 17,226 full-fine-tuning parameters.
-- **CNN:** two `3×3` convolutional layers (`1→16→32`), two max-pooling operations, then `128→64→10`, 13,706 full-fine-tuning parameters.
+- **MLP:** `64 → 128 → 64 → 10`, GELU, три адаптированных линейных слоя, 17,226 параметров полного дообучения.
+- **CNN:** два свёрточных слоя `3×3` (`1→16→32`), две операции максимального пулинга, затем `128→64→10`, 13,706 параметров полного дообучения.
 
-Both fixed pretrained bases reach `97.5%` clean test accuracy.
+Обе фиксированные предобученные базовые модели достигают точности `97.5%` на чистой тестовой выборке.
 
-### Target shifts
+### Целевые сдвиги
 
-- **Contrast:** multiply pixels by `0.10`.
-- **Rotation:** bilinear rotation by 25°.
-- **Mixed:** 18° rotation, multiply by `0.65`, then Gaussian noise `σ=0.16`.
+- **Контраст:** умножение пикселей на `0.10`.
+- **Поворот:** билинейный поворот на 25°.
+- **Смешанный:** поворот на 18°, умножение на `0.65`, затем гауссов шум `σ=0.16`.
 
-The mixed shift is the main positive hypothesis; rotation is secondary; contrast is the negative control.
+Смешанный сдвиг — основная положительная гипотеза; поворот — вторичная; контраст — негативный контроль.
 
-### Metrics
+### Метрики
 
-The primary downstream metric is target-test accuracy. Supporting metrics are macro-F1, negative log-likelihood, clean-domain retained accuracy, trainable-parameter count, best validation epoch, and runtime diagnostics. Inferential comparisons operate on within-seed accuracy differences in percentage points.
+Основная метрика на прикладной задаче — точность на целевой тестовой выборке. Дополнительные метрики: macro-F1, отрицательное логарифмическое правдоподобие, сохранённая точность в исходной предметной области, число обучаемых параметров, лучшая эпоха по валидации и диагностические показатели времени выполнения. Статистические сравнения выполняются для внутрисидовых разностей точности в процентных пунктах.
 
-## Validation-first experimental design
+## Экспериментальный дизайн с выбором по валидации
 
-The extension decisions were frozen in `docs/EXTENSION_PROTOCOL.md` before new target-test evaluation.
+Решения расширенного исследования были зафиксированы в `docs/EXTENSION_PROTOCOL.md` до новой оценки на целевой тестовой выборке.
 
-### Configuration selection
+### Выбор конфигурации
 
-- pilot adaptation seeds: `11, 22, 33, 44, 55`;
-- adapter/magnitude learning rates: `0.003, 0.01, 0.03`;
-- full-fine-tuning learning rates: `0.0001, 0.0003, 0.001`;
-- LoRA+ `A` learning rates: `0.0003, 0.001, 0.003`, with `B/A=16`;
-- maximum 120 epochs, AdamW, weight decay `1e−4`, patience 18;
-- selection: highest mean target-validation accuracy, then lowest mean validation NLL.
+- пилотные сиды адаптации: `11, 22, 33, 44, 55`;
+- скорости обучения адаптера и величины: `0.003, 0.01, 0.03`;
+- скорости обучения при полном дообучении: `0.0001, 0.0003, 0.001`;
+- скорости обучения `A` в LoRA+: `0.0003, 0.001, 0.003`, при `B/A=16`;
+- не более 120 эпох, AdamW, затухание весов `1e−4`, 18 эпох ожидания до ранней остановки;
+- выбор: наибольшая средняя точность на целевой валидационной выборке, затем наименьший средний валидационный NLL для разрешения равенства.
 
-Every method/shift configuration is frozen before held-seed target-test evaluation. Pilot tables contain no target-test columns, and the validator rejects them if they appear.
+Конфигурация каждого метода и сдвига фиксируется до оценки целевой тестовой выборки на удержанных сидах. Таблицы пилотного этапа не содержат столбцов целевой тестовой выборки, а валидатор отклоняет их при появлении таких столбцов.
 
-### Baselines and parameter controls
+### Базовые варианты и контроль параметров
 
-1. frozen backbone;
-2. magnitude-only;
-3. uniform rank-4 LoRA;
-4. uniform rank-4 LoRA+;
-5. uniform rank-4 DoRA;
-6. full fine-tuning;
-7. LoRA matched to the DoRA budget;
-8. DoRA under the LoRA budget ceiling.
+1. замороженная базовая архитектура;
+2. адаптация только величины;
+3. равномерная LoRA ранга 4;
+4. равномерная LoRA+ ранга 4;
+5. равномерная DoRA ранга 4;
+6. полное дообучение;
+7. LoRA, согласованная с бюджетом DoRA;
+8. DoRA в пределах бюджета LoRA.
 
-For the MLP, uniform LoRA has 1,832 trainable parameters and uniform DoRA 2,034. Validation selects the matched LoRA allocation from `(5,4,4)`, `(4,5,4)`, `(4,4,6)`; the closest candidates use 2,024 parameters. Budgeted DoRA is selected from `(4,3,3)`, `(3,4,3)`, `(3,3,6)` and never exceeds 1,832 parameters.
+Для MLP равномерная LoRA имеет 1,832 обучаемых параметра, а равномерная DoRA — 2,034. По валидации выбирается согласованное распределение LoRA из `(5,4,4)`, `(4,5,4)`, `(4,4,6)`; ближайшие варианты используют 2,024 параметра. DoRA в рамках бюджета выбирается из `(4,3,3)`, `(3,4,3)`, `(3,3,6)` и никогда не превышает 1,832 параметра.
 
-### Held-seed evaluation and statistics
+### Оценка на удержанных сидах и статистика
 
-- MLP: seeds `101..120`, 20 paired observations per method/shift;
-- CNN: seeds `201..210`, 10 paired observations;
-- data-regime sweep: seeds `301..320`.
+- MLP: сиды `101..120`, 20 парных наблюдений для каждого метода и сдвига;
+- CNN: сиды `201..210`, 10 парных наблюдений;
+- перебор режимов объёма данных: сиды `301..320`.
 
-For each declared comparison the analysis reports mean paired difference, 95% paired Student t interval, paired effect size `d_z`, paired t-test, Wilcoxon signed-rank test, wins/ties/losses, and Holm-adjusted p-values. The MLP primary family contains DoRA versus LoRA, LoRA+, and budget-matched LoRA across all three shifts (`m=9`). The CNN family is corrected separately (`m=6`). The predeclared budgeted-DoRA comparisons are descriptive and receive their own secondary-family correction (`m=3`); they are not used to rescue a primary result.
+Для каждого заявленного сравнения анализ сообщает среднюю парную разность, 95%-й доверительный интервал (ДИ) парного t-критерия, величину эффекта `d_z`, парный t-критерий, критерий знаковых рангов Уилкоксона, победы/равенства/поражения и p-значения с поправкой Холма. Основная семья сравнений MLP содержит DoRA против LoRA, LoRA+ и согласованной по бюджету LoRA для всех трёх сдвигов (`m=9`). Семья сравнений CNN корректируется отдельно (`m=6`). Заранее заявленные сравнения DoRA в рамках бюджета являются описательными и получают собственную поправку для вторичной семьи сравнений (`m=3`); они не используются для спасения основного результата.
 
-## Mixed-shift held-seed estimates are positive on both backbones
+## Оценки для смешанного сдвига на удержанных сидах положительны на обеих базовых архитектурах
 
-### Absolute performance
+### Абсолютные результаты
 
-| Backbone / method | Parameters | Accuracy | 95% CI |
+| Базовая архитектура / метод | Параметры | Точность | 95%-й ДИ |
 |---|---:|---:|---:|
 | MLP DoRA | 2,034 | **75.22%** | [74.32, 76.13] |
-| MLP full fine-tuning | 17,226 | 75.17% | [74.38, 75.96] |
-| MLP budgeted DoRA | 1,768 | 74.99% | [74.05, 75.93] |
-| MLP budget-matched LoRA | 2,024 | 74.69% | [73.84, 75.54] |
+| MLP, полное дообучение | 17,226 | 75.17% | [74.38, 75.96] |
+| MLP DoRA в рамках бюджета | 1,768 | 74.99% | [74.05, 75.93] |
+| MLP LoRA, согласованная по бюджету | 2,024 | 74.69% | [73.84, 75.54] |
 | MLP LoRA | 1,832 | 74.17% | [73.10, 75.23] |
 | MLP LoRA+ | 1,832 | 73.79% | [72.59, 75.00] |
-| CNN full fine-tuning | 13,706 | **80.67%** | [79.89, 81.44] |
+| CNN, полное дообучение | 13,706 | **80.67%** | [79.89, 81.44] |
 | CNN DoRA | 1,990 | 80.53% | [79.93, 81.12] |
 | CNN LoRA | 1,868 | 79.61% | [78.90, 80.32] |
 | CNN LoRA+ | 1,868 | 79.50% | [78.50, 80.50] |
 
-DoRA reaches essentially the same mean accuracy as full fine-tuning with 11.8% of the MLP parameters and 14.5% of the CNN parameters. This is descriptive parameter efficiency on this benchmark, not a universal compression claim.
+DoRA достигает практически той же средней точности, что и полное дообучение, используя 11.8% параметров MLP и 14.5% параметров CNN. Это описательная эффективность по параметрам на данной модельной задаче, а не универсальное утверждение о сжатии.
 
-### Paired DoRA−LoRA effects
+### Парные эффекты DoRA−LoRA
 
-| Backbone | Contrast | Rotation | Mixed |
+| Базовая архитектура | Контраст | Поворот | Смешанный сдвиг |
 |---|---:|---:|---:|
 | MLP, n=20 | −0.19 [−0.54, +0.15] | +0.42 [−0.29, +1.12] | **+1.06 [−0.07, +2.18]** |
 | CNN, n=10 | −0.31 [−1.11, +0.50] | +0.36 [−0.38, +1.10] | **+0.92 [+0.10, +1.73]** |
 
-The mixed effect has similar magnitude in two architectures. MLP favors DoRA in 15/20 seeds; CNN in 8/10. Contrast is slightly negative in both, which is consistent with its role as a negative control.
+Эффект смешанного сдвига имеет близкую величину для двух архитектур. MLP отдаёт преимущество DoRA в 15/20 сидов; CNN — в 8/10. Для контраста оценка немного отрицательна в обоих случаях, что согласуется с его ролью негативного контроля.
 
-The MLP ordinary-LoRA comparison has unadjusted `p=0.063702` and Holm-adjusted `p=0.382213`. The CNN comparison has unadjusted `p=0.031791` and family-wise Holm `p=0.158955`. The same sign is a useful internal observation, but the corrected evidence remains inconclusive and does not establish cross-checkpoint replication.
+Для сравнения MLP с обычной LoRA исходное значение составляет `p=0.063702`, а скорректированное методом Холма — `p=0.382213`. Для CNN исходное значение составляет `p=0.031791`, а p-значение с поправкой Холма на уровне семьи сравнений — `p=0.158955`. Одинаковый знак — полезное внутреннее наблюдение, но скорректированные доказательства остаются неубедительными и не устанавливают репликацию между чекпоинтами.
 
-## Stronger baselines narrow the interpretation
+## Более сильные базовые варианты сужают интерпретацию
 
-On MLP mixed shift:
+Для смешанного сдвига MLP:
 
-| Comparison | Mean Δ | 95% CI | `d_z` | Holm paired-t p | W/T/L |
+| Сравнение | Средняя Δ | 95%-й ДИ | `d_z` | p парного t-критерия с поправкой Холма | П/Р/П |
 |---|---:|---:|---:|---:|---:|
 | DoRA − LoRA | +1.06 | [−0.07, +2.18] | 0.44 | 0.382213 | 15/0/5 |
 | DoRA − LoRA+ | +1.43 | [+0.45, +2.41] | 0.69 | 0.050935 | 14/1/5 |
-| DoRA − matched LoRA | +0.53 | [−0.29, +1.35] | 0.30 | 0.772762 | 11/1/8 |
+| DoRA − согласованная LoRA | +0.53 | [−0.29, +1.35] | 0.30 | 0.772762 | 11/1/8 |
 
-The matched-budget result shows that the ordinary DoRA−LoRA point estimate is not explained solely by DoRA's extra magnitude parameters. Yet the wide interval also says that 20 seeds do not locate the matched effect precisely.
+Результат при согласованном бюджете показывает, что точечная оценка DoRA−LoRA для обычных конфигураций не объясняется только дополнительными параметрами величины в DoRA. Однако широкий интервал также показывает, что 20 сидов не позволяют точно локализовать согласованный эффект.
 
-LoRA+ is not superior in this setup. That should not be generalized beyond the chosen fixed `B/A=16` ratio: the LoRA+ paper and reference implementation treat the optimal ratio as task dependent. Here it is a strong declared optimizer baseline, not an exhaustive LoRA+ tuning study.
+В данной постановке LoRA+ не превосходит остальные методы. Этот результат нельзя обобщать за пределы выбранного фиксированного отношения `B/A=16`: в статье о LoRA+ и эталонной реализации оптимальное отношение считается зависящим от задачи. Здесь LoRA+ — сильный заявленный базовый вариант оптимизации, а не исчерпывающее исследование настройки LoRA+.
 
-The secondary budgeted-DoRA comparison is `+0.82 pp` versus LoRA, CI `[−0.22, +1.86]`, raw `p=0.115696`, and secondary-family Holm `p=0.347089`. It is reported for budget transparency and remains descriptive.
+Вторичное сравнение DoRA в рамках бюджета с LoRA даёт `+0.82 п.п.`, ДИ `[−0.22, +1.86]`, исходное `p=0.115696` и скорректированное методом Холма p-значение во вторичной семье сравнений `p=0.347089`. Оно приводится для прозрачности бюджета и остаётся описательным.
 
-## The effect persists across target-data budgets
+## Эффект сохраняется при разных бюджетах целевых данных
 
-The mixed-shift data sweep reuses the already selected MLP configurations. For each seed, 50/100/200/400-example subsets are class-balanced and nested. The same sample retains the same corruption realization as the budget grows.
+При переборе объёмов данных для смешанного сдвига повторно используются уже выбранные конфигурации MLP. Для каждого сида подвыборки из 50/100/200/400 примеров сбалансированы по классам и вложены друг в друга. При увеличении бюджета один и тот же пример сохраняет ту же реализацию искажения.
 
-| Target examples | DoRA | LoRA | LoRA+ | DoRA − LoRA, 95% CI |
+| Целевые примеры | DoRA | LoRA | LoRA+ | DoRA − LoRA, 95%-й ДИ |
 |---:|---:|---:|---:|---:|
 | 50 | 61.47% | 61.01% | 59.01% | +0.46 [−0.41, +1.33] |
 | 100 | 65.82% | 65.29% | 62.99% | +0.53 [−0.25, +1.30] |
 | 200 | 70.65% | 69.74% | 68.90% | +0.92 [−0.12, +1.95] |
 | 400 | 74.86% | 74.17% | 73.32% | +0.69 [−0.02, +1.41] |
 
-DoRA−LoRA is positive at every declared budget, but every individual LoRA interval includes zero. DoRA's advantage over LoRA+ is larger (`+1.54` to `+2.83 pp`) and its paired-t Holm p-value is below 0.05 at all four budgets. Because these are supporting analyses conditional on the selected checkpoint and configuration, they show a same-sign pattern across budgets rather than an independent replication or a monotonic trend.
+Разность DoRA−LoRA положительна при каждом заявленном бюджете, но каждый отдельный интервал LoRA включает ноль. Преимущество DoRA над LoRA+ больше (`+1.54`–`+2.83 п.п.`), а p-значение парного t-критерия с поправкой Холма ниже 0.05 при всех четырёх бюджетах. Поскольку это вспомогательные анализы, условные на выбранных чекпоинте и конфигурации, они показывают одинаковый знак при разных бюджетах, а не независимую репликацию или монотонный тренд.
 
-## Simple and negative results clarify the mechanism
+## Простые и отрицательные результаты проясняют механизм
 
-### Pure contrast favors magnitude-only adaptation
+### Чистое изменение контраста благоприятно для адаптации только величины
 
-On MLP contrast, magnitude-only achieves `96.90%` with 202 parameters. DoRA reaches `95.18%`, LoRA `95.38%`, and LoRA+ `95.89%`. The analogous CNN magnitude-only result is `96.97%` with 122 parameters. A full low-rank directional update is unnecessary when the target shift is close to scale adjustment.
+При изменении контраста для MLP адаптация только величины достигает `96.90%` с 202 параметрами. DoRA достигает `95.18%`, LoRA — `95.38%`, а LoRA+ — `95.89%`. Аналогичный результат CNN для адаптации только величины составляет `96.97%` при 122 параметрах. Полное низкоранговое обновление направления не требуется, когда целевой сдвиг близок к изменению масштаба.
 
-### Rotation removes the matched-budget advantage
+### При повороте исчезает преимущество согласованного бюджета
 
-On MLP rotation, uniform DoRA and selected budget-matched LoRA both reach `93.89%`. DoRA exceeds ordinary LoRA by only `+0.42 pp`, with CI crossing zero. The rank allocation search can therefore close the gap when the shift is predominantly geometric.
+При повороте для MLP и равномерная DoRA, и выбранная согласованная по бюджету LoRA достигают `93.89%`. DoRA превосходит обычную LoRA лишь на `+0.42 п.п.`, причём ДИ пересекает ноль. Поэтому поиск распределения ранга может закрыть разрыв, когда сдвиг преимущественно геометрический.
 
-### Clean-domain retention reveals specialization
+### Сохранение качества в исходной предметной области показывает специализацию
 
-Active target adapters reduce clean-domain accuracy, particularly for rotation. This does not destroy the original model: disabling the adapter restores the frozen base. The result should be read as specialization cost, not catastrophic irreversible forgetting.
+Активные целевые адаптеры снижают точность в исходной предметной области, особенно при повороте. Это не разрушает исходную модель: отключение адаптера восстанавливает замороженную базовую модель. Результат следует понимать как стоимость специализации, а не как катастрофическое необратимое забывание.
 
-## Capacity is clear; optimization is not always trivial
+## Представительная способность ясна, но оптимизация не всегда проста
 
-The synthetic target is
+Синтетическая целевая матрица имеет вид
 
 ```text
 W★ = diag(1 + γz)(W₀ + ΔW),
 ```
 
-where `rank(ΔW)=4` and `γ` controls heterogeneous row scaling. Ten independent problems use seeds `200..209`; each trained DoRA model has five adapter initializations and up to 2,000 optimization steps over learning rates `0.01, 0.03, 0.1`.
+где `rank(ΔW)=4`, а `γ` управляет неоднородным масштабированием строк. В десяти независимых задачах используются сиды `200..209`; каждая обученная модель DoRA имеет пять инициализаций адаптера и до 2,000 шагов оптимизации при скоростях обучения `0.01, 0.03, 0.1`.
 
-| Magnitude strength | Trained DoRA error | Feasible DoRA | LoRA SVD oracle | Convergence `<1e−3` |
+| Сила изменения величины | Ошибка обученной DoRA | Допустимая DoRA | SVD-оракул LoRA | Доля сошедшихся `<1e−3` |
 |---:|---:|---:|---:|---:|
 | 0.0 | 2.54e−6 | 1.58e−7 | 1.29e−7 | 100% |
 | 0.4 | 1.46e−6 | 1.60e−7 | 0.174 | 100% |
 | 0.8 | 0.00444 | 1.58e−7 | 0.289 | 88% |
 
-At `γ=0`, LoRA and DoRA both satisfy the additive rank-matched positive control. At `γ=0.4`, trained DoRA converges near the feasible construction while LoRA has an irreducible additive residual. At `γ=0.8`, DoRA remains dramatically closer on average, but six of fifty initializations fail the `<1e−3` threshold. Those runs are retained. This separates three statements that the original project conflated:
+При `γ=0` LoRA и DoRA обе удовлетворяют аддитивному положительному контролю с согласованным рангом. При `γ=0.4` обученная DoRA сходится вблизи допустимой конструкции, тогда как у LoRA остаётся неустранимая аддитивная остаточная ошибка. При `γ=0.8` DoRA в среднем остаётся значительно ближе к цели, однако шесть из пятидесяти инициализаций не достигают порога `<1e−3`. Эти запуски сохранены. Это разделяет три утверждения, которые смешивались в первоначальном проекте:
 
-- DoRA **can represent** the target;
-- LoRA's fixed-rank additive family **cannot represent it exactly**;
-- standard DoRA optimization **usually but not always finds** the near-exact solution under extreme magnitude shift.
+- DoRA **может представить** целевую матрицу;
+- аддитивное семейство LoRA фиксированного ранга **не может представить её точно**;
+- стандартная оптимизация DoRA **обычно, но не всегда находит** почти точное решение при экстремальном изменении величины.
 
-## Validation and data-integrity results
+## Результаты валидации и проверки целостности данных
 
-The extension contains 1,960 saved run records:
+Расширение содержит 1,960 сохранённых записей запусков:
 
-- 510 MLP pilot rows, including 495 trained candidates;
-- 480 MLP held-seed rows, including 420 trained models;
-- 240 CNN pilot rows, including 225 trained candidates;
-- 180 CNN held-seed rows, including 150 trained models;
-- 400 trained data-regime models;
-- 150 synthetic optimization runs.
+- 510 строк пилотного этапа MLP, включая 495 обученных кандидатов;
+- 480 строк оценки MLP на удержанных сидах, включая 420 обученных моделей;
+- 240 строк пилотного этапа CNN, включая 225 обученных кандидатов;
+- 180 строк оценки CNN на удержанных сидах, включая 150 обученных моделей;
+- 400 обученных моделей для режимов объёма данных;
+- 150 запусков синтетической оптимизации.
 
-Eleven unit tests pass. Separate analysis scripts verify:
+Пройдено одиннадцать модульных тестов. Отдельные скрипты анализа проверяют:
 
-- complete seed, scenario, method, and budget coverage;
-- no duplicate paired keys;
-- no target-test fields in pilot tables;
-- exact equality between selected validation configurations and held-seed configurations;
-- finite metrics and valid ranges;
-- expected parameter counts;
-- oracle invariance across synthetic initialization duplicates;
-- problem-level, rather than initialization-level, synthetic aggregation;
-- headline numbers recomputed from raw CSV rows.
+- полное покрытие сидов, сценариев, методов и бюджетов;
+- отсутствие дубликатов парных ключей;
+- отсутствие полей целевой тестовой выборки в таблицах пилотного этапа;
+- точное совпадение конфигураций, выбранных по валидации, с конфигурациями запусков на удержанных сидах;
+- конечность метрик и допустимость их диапазонов;
+- ожидаемое число параметров;
+- инвариантность оракулов по дубликатам синтетических инициализаций;
+- агрегацию синтетических результатов на уровне задач, а не инициализаций;
+- повторное вычисление ключевых чисел из необработанных строк CSV.
 
-Both `results/extension_validation.json` and `results/robustness_validation.json` report `ready_to_share` with no blocking issue.
+И `results/extension_validation.json`, и `results/robustness_validation.json` сообщают статус `ready_to_share` без блокирующих проблем.
 
-## Limitations and uncertainty
+## Ограничения и неопределённость
 
-1. **Small proxy, not an LLM reproduction.** Digits is useful for many paired runs and controlled corruption, but does not establish transformer behavior.
-2. **One fixed pretrained instance per architecture.** Adaptation seeds cover sampling and optimizer variability, not pretraining/checkpoint variability.
-3. **Designed shifts.** The corruptions are controlled mechanisms, not a representative distribution of real deployment drift.
-4. **Previously explored target split.** The extension protocol and new seed ranges were frozen before the new runs, but the split existed in the exploratory phase. This is an internal confirmation, not a fully untouched external replication.
-5. **Multiplicity reduces certainty.** Several attractive unadjusted results are not below 0.05 after Holm correction.
-6. **LoRA+ ratio is fixed.** Only the base learning rate is selected; the `B/A=16` ratio is not tuned per shift.
-7. **Synthetic generator favors the mechanism by design.** It diagnoses expressivity and optimization, not real-task frequency.
-8. **Wall-clock values are implementation-specific.** Runtime is saved for diagnostics but is not promoted as a cross-method performance claim.
+1. **Малая прокси-задача, а не воспроизведение на LLM.** Digits удобен для большого числа парных запусков и контролируемых искажений, но не устанавливает поведение трансформеров.
+2. **Один фиксированный предобученный экземпляр на архитектуру.** Сиды адаптации охватывают вариативность выборки и оптимизатора, но не вариативность предобучения или выбора чекпоинта.
+3. **Спроектированные сдвиги.** Искажения представляют собой контролируемые механизмы, а не репрезентативное распределение реальных сдвигов при эксплуатации.
+4. **Ранее исследованное целевое разбиение.** Протокол расширения и новые диапазоны сидов были зафиксированы до новых запусков, но разбиение уже существовало на разведочном этапе. Это внутреннее подтверждение по зафиксированному протоколу, а не полностью нетронутая внешняя (независимая) репликация.
+5. **Множественность сравнений снижает уверенность.** Несколько привлекательных исходных результатов после поправки Холма не имеют p-значений ниже 0.05.
+6. **Отношение LoRA+ фиксировано.** Выбирается только базовая скорость обучения; отношение `B/A=16` не настраивается отдельно для каждого сдвига.
+7. **Синтетический генератор по замыслу благоприятен для механизма.** Он диагностирует представительную способность и оптимизацию, а не частоту эффекта в реальных задачах.
+8. **Время выполнения зависит от реализации.** Время сохраняется для диагностики, но не заявляется как межметодное сравнение производительности.
 
-## Recommended next experiment
+## Рекомендуемый следующий эксперимент
 
-The highest-value next step is a separately preregistered external replication with the official PEFT stack on a small pretrained transformer. It should compare LoRA, LoRA+, rsLoRA, and DoRA on identical target modules, use matched parameter budgets, tune only on validation, vary at least several pretrained checkpoints, and name one primary task/metric before test evaluation.
+Наиболее ценный следующий шаг — отдельно предварительно зарегистрированная внешняя (независимая) репликация с официальным стеком PEFT на малом предобученном трансформере. Следует сравнить LoRA, LoRA+, rsLoRA и DoRA на одинаковых целевых модулях, использовать согласованные бюджеты параметров, настраивать только по валидации, варьировать как минимум несколько предобученных чекпоинтов и до оценки на тестовой выборке назвать одну основную задачу и метрику.
 
-The present project should not add an unrun transformer result to the poster as future-looking decoration. Its current contribution is already complete and defensible for its scope: a mechanism result, trained optimization diagnostic, protocol-frozen held-seed evaluation, a second-backbone check, data-regime sensitivity analysis, stronger baselines, and explicit uncertainty.
+В текущий проект не следует добавлять незапущенный результат на трансформере в качестве ориентированного на будущее украшения плаката. Его нынешний вклад уже завершён и обоснован в своих рамках: результат о механизме, диагностика обученной оптимизации, оценка на удержанных сидах по зафиксированному протоколу, проверка на второй базовой архитектуре, анализ чувствительности к режиму объёма данных, более сильные базовые варианты и явный учёт неопределённости.
 
-## Conclusion
+## Заключение
 
-DoRA is not a universally better LoRA. The results support the hypothesis that it can be a useful inductive bias when adaptation requires coordinated directional change and heterogeneous weight-magnitude adjustment. In the main mixed shift, the conditional point estimate is about one percentage point and has the same sign on two fixed backbones and four data budgets; multiplicity-adjusted evidence remains inconclusive. In simpler or differently structured shifts, the gain disappears and a cheaper adapter can win. This bounded result is smaller than the original synthetic ratio, but it is far more credible and more useful.
+DoRA не является универсально лучшей версией LoRA. Результаты поддерживают гипотезу о том, что DoRA может быть полезным индуктивным смещением, когда адаптация требует согласованного изменения направления и неоднородной корректировки величины весов. На основном смешанном сдвиге условная точечная оценка составляет примерно один процентный пункт (п.п.) и имеет одинаковый знак на двух фиксированных базовых архитектурах и при четырёх бюджетах данных; после поправки на множественность доказательства остаются неубедительными. При более простых или иначе структурированных сдвигах преимущество исчезает, а более дешёвый адаптер может победить. Этот ограниченный результат скромнее первоначального отношения синтетических ошибок, но намного убедительнее и полезнее.
 
-## References
+## Литература
 
 1. Hu et al. *LoRA: Low-Rank Adaptation of Large Language Models*. ICLR 2022. https://openreview.net/forum?id=nZeVKeeFYf9
 2. Liu et al. *DoRA: Weight-Decomposed Low-Rank Adaptation*. ICML 2024 Oral. https://proceedings.mlr.press/v235/liu24bn.html

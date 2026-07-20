@@ -1,58 +1,58 @@
-# Validation index
+# Сводка валидации
 
-Overall status: **ready to share with explicit caveats**.
+Общий статус: **готово к представлению с явными оговорками**.
 
-The current extension supersedes the earlier five-seed validation note. Two separate analysis passes validate the held-seed and robustness tracks.
+Текущее расширение заменяет прежнюю заметку о валидации на пяти сидах. Два отдельных прохода анализа валидируют оценку на удержанных сидах и направления проверки устойчивости.
 
-## Machine-checked experiment coverage
+## Машинная проверка покрытия экспериментов
 
-- MLP pilot: 510 rows, five validation-only seeds, no target-test columns.
-- MLP held-seed evaluation: 480 rows, 20 new paired adaptation seeds.
-- CNN pilot: 240 rows, five validation-only seeds.
-- CNN held-seed evaluation: 180 rows, 10 new paired adaptation seeds.
-- target-data sweep: 400 trained models, 20 seeds × 4 nested budgets × 5 methods.
-- synthetic optimization: 150 runs, 10 problems × 3 magnitude strengths × 5 initializations.
-- deterministic correctness suite: 11/11 tests passing.
+- Пилотный этап MLP: 510 строк, пять сидов только для валидации, без столбцов целевой тестовой выборки.
+- Оценка MLP на удержанных сидах (held-seed): 480 строк, 20 новых парных сидов адаптации.
+- Пилотный этап CNN: 240 строк, пять сидов только для валидации.
+- Оценка CNN на удержанных сидах: 180 строк, 10 новых парных сидов адаптации.
+- Перебор режимов объёма целевых данных: 400 обученных моделей, 20 сидов × 4 вложенных бюджета × 5 методов.
+- Синтетическая оптимизация: 150 запусков, 10 задач × 3 уровня силы изменения величины × 5 инициализаций.
+- Детерминированный набор проверок корректности: пройдено 11/11 тестов.
 
-## Gates applied
+## Применённые контрольные условия
 
-- complete seed/scenario/method/budget coverage;
-- duplicate-key rejection;
-- metric null, finiteness, and range checks;
-- exact reconciliation of validation-selected allocations/LRs with held-seed runs;
-- paired comparison coverage;
-- parameter-count tests for uniform and matched allocations;
-- Linear and Conv2d no-op initialization tests;
-- LoRA+ optimizer-group ratio test;
-- nested balanced-subset test;
-- synthetic oracle invariance across initialization duplicates;
-- problem-level synthetic aggregation to prevent pseudoreplication;
-- paired t/Wilcoxon calculations and Holm correction from raw rows, separately for MLP primary (`m=9`), CNN (`m=6`), and descriptive MLP secondary (`m=3`) families;
-- poster/report figures generated from saved validated tables.
+- полное покрытие сидов, сценариев, методов и бюджетов;
+- отклонение дубликатов ключей;
+- проверки пропусков, конечности и диапазонов метрик;
+- точная сверка распределений ранга и скоростей обучения, выбранных по валидации, с запусками на удержанных сидах;
+- покрытие парных сравнений;
+- тесты числа параметров для равномерных и согласованных распределений;
+- тесты инициализации без эффекта (no-op) для Linear и Conv2d;
+- тест отношения групп оптимизатора LoRA+;
+- тест вложенных сбалансированных подвыборок;
+- инвариантность синтетических оракулов по дубликатам инициализаций;
+- агрегация синтетических результатов на уровне задач для предотвращения псевдоповторности (pseudoreplication);
+- расчёты парного t-критерия и критерия знаковых рангов Уилкоксона, а также поправка Холма по необработанным строкам отдельно для основной семьи MLP (`m=9`), семьи CNN (`m=6`) и описательной вторичной семьи MLP (`m=3`);
+- формирование рисунков плаката и отчёта из сохранённых провалидированных таблиц.
 
-## Validation artifacts
+## Артефакты валидации
 
-- `docs/EXTENSION_VALIDATION.md`: held-seed method, coverage, and statistical spot checks.
-- `docs/ROBUSTNESS_VALIDATION.md`: data-regime and synthetic optimization checks.
-- `results/extension_validation.json`: machine-readable held-seed status.
-- `results/robustness_validation.json`: machine-readable robustness status.
-- `docs/CHART_MAP.md`: visual question, grain, encoding, and QA map.
+- `docs/EXTENSION_VALIDATION.md`: метод оценки на удержанных сидах, покрытие и выборочные статистические проверки.
+- `docs/ROBUSTNESS_VALIDATION.md`: проверки режимов объёма данных и синтетической оптимизации.
+- `results/extension_validation.json`: машиночитаемый статус оценки на удержанных сидах.
+- `results/robustness_validation.json`: машиночитаемый статус проверки устойчивости.
+- `docs/CHART_MAP.md`: карта аналитических вопросов, уровня детализации, визуального кодирования и контроля качества.
 
-## Required reader-facing caveats
+## Обязательные оговорки для читателя
 
-- Digits is a small real-image proxy, not an LLM-scale reproduction.
-- One fixed pretrained instance is used per architecture.
-- The target split existed in the exploratory phase; the new protocol and seeds were frozen before the extension, but this is not an untouched external replication.
-- Adaptation seeds are conditional on one fixed pretrained checkpoint per architecture; they do not measure pretraining variability.
-- Multiple-testing correction makes the strongest individual claims less decisive than their unadjusted p-values.
-- The LoRA+ `B/A=16` learning-rate ratio is fixed rather than exhaustively tuned per shift.
-- The synthetic target belongs to the DoRA family by construction.
-- Runtime is diagnostic only and should not be presented as a hardware-independent speed comparison.
+- Digits — малая прокси-задача на реальных изображениях, а не воспроизведение в масштабе LLM.
+- Для каждой архитектуры используется один фиксированный предобученный экземпляр.
+- Целевое разбиение существовало на разведочном этапе; новый протокол и сиды были зафиксированы до расширенного исследования, но это не нетронутая внешняя (независимая) репликация.
+- Сиды адаптации условны на одном фиксированном предобученном чекпоинте для каждой архитектуры; они не измеряют вариативность предобучения.
+- Поправка на множественность сравнений делает наиболее сильные отдельные утверждения менее убедительными, чем их нескорректированные p-значения.
+- Отношение скоростей обучения LoRA+ `B/A=16` фиксировано, а не исчерпывающе настроено для каждого сдвига.
+- Синтетическая целевая матрица по построению принадлежит семейству DoRA.
+- Время выполнения используется только для диагностики и не должно представляться как не зависящее от оборудования сравнение скорости.
 
-## Artifact QA
+## Контроль качества артефактов
 
-The self-contained technical HTML report passed canonical artifact validation, payload packaging, and structural verification. Browser-level responsive verification is marked `structural_only` because Chromium is not installed in the workspace; the generated report includes the semantic no-script/print fallback.
+Автономный технический HTML-отчёт прошёл каноническую валидацию артефакта, проверку упаковки полезной нагрузки и структурную проверку. Браузерная проверка адаптивного отображения отмечена как `structural_only`, поскольку Chromium не установлен в рабочей среде; сформированный отчёт содержит семантический резервный вариант для режима без JavaScript и для печати.
 
-The notebook is generated and executed in-process by `scripts/build_notebook.py`, validated with `nbformat`, and saved with embedded outputs and explicit execution provenance. It should not be described as an untouched external kernel run.
+Ноутбук формируется и выполняется в текущем процессе скриптом `scripts/build_notebook.py`, валидируется с помощью `nbformat` и сохраняется со встроенными результатами и явно указанным происхождением выполнения. Его не следует описывать как нетронутый запуск во внешнем ядре.
 
-The AIRI poster passed the presentation overflow test and the inherited-template fidelity check with zero issues. The final PPTX contains no empty structural placeholders. Its PDF export is a single ISO A1 portrait page (`1683.75 × 2383.88 pt`, equivalent to `594 × 841 mm`), uses embedded fonts, and was re-rendered at 120 dpi for full-page visual inspection after export.
+Плакат AIRI прошёл тест переполнения презентации и проверку соответствия унаследованному шаблону без единой проблемы. Итоговый PPTX не содержит пустых структурных заполнителей. Экспортированный PDF состоит из одной портретной страницы ISO A1 (`1683.75 × 2383.88 pt`, что соответствует `594 × 841 mm`), использует встроенные шрифты и после экспорта был повторно отрисован при 120 dpi для визуальной проверки всей страницы.

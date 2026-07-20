@@ -1,116 +1,75 @@
-# Confirmatory extension protocol (fixed before new test evaluation)
+# Протокол подтверждающего расширения (зафиксирован до новой оценки на тестовой выборке)
 
-## Objective
+## Цель
 
-The exploratory AIRI study found a geometry-dependent advantage for DoRA on a
-small real-image domain-adaptation proxy. This extension asks whether the result
-survives stronger LoRA baselines, nearly matched parameter budgets, new
-adaptation seeds, a second architecture, and changes in the amount of target
-data.
+В разведочном исследовании AIRI было обнаружено зависящее от геометрии преимущество DoRA на малой прокси-задаче адаптации предметной области на реальных изображениях. Это расширение проверяет, сохраняется ли результат при более сильных базовых вариантах LoRA, почти согласованных бюджетах параметров, новых сидах адаптации, второй архитектуре и изменении объёма целевых данных.
 
-The extension is intentionally a controlled small-model study. It is not a
-claim about transformer-scale performance and is not presented as a reproduction
-of the LLaMA/LLaVA experiments in the DoRA paper.
+Расширение намеренно представляет собой контролируемое исследование на малых моделях. Оно не является утверждением о производительности в масштабе трансформеров и не представляется как воспроизведение экспериментов LLaMA/LLaVA из статьи о DoRA.
 
-## Frozen decisions
+## Зафиксированные решения
 
-- Dataset and source/validation/test split: the existing stratified
-  `sklearn Digits` split with split seed `2026`.
-- Target shifts: contrast, rotation, and mixed corruption, with the existing
-  fixed validation and test corruptions.
-- Primary architecture: MLP `64 -> 128 -> 64 -> 10`.
-- Architecture replication: a compact CNN with two convolutional and two
-  linear layers.
-- Main adapter rank: `r=4`.
-- Pilot adaptation seeds: `11, 22, 33, 44, 55`.
-- MLP confirmatory seeds: `101..120` (not used in the exploratory study).
-- CNN confirmatory seeds: `201..210`.
-- Data-regime seeds: `301..320`.
-- Optimizer: AdamW, weight decay `1e-4`; maximum `120` epochs; validation
-  early stopping with patience `18`.
-- Test metrics are evaluated only after validation-based selection.
+- Набор данных и разбиение на исходную, валидационную и тестовую выборки: существующее стратифицированное разбиение `sklearn Digits` с сидом разбиения `2026`.
+- Целевые сдвиги: контраст, поворот и смешанное искажение с существующими фиксированными искажениями для валидационной и тестовой выборок.
+- Основная архитектура: MLP `64 -> 128 -> 64 -> 10`.
+- Проверка на второй архитектуре: компактная CNN с двумя свёрточными и двумя линейными слоями.
+- Основной ранг адаптера: `r=4`.
+- Пилотные сиды адаптации: `11, 22, 33, 44, 55`.
+- Подтверждающие сиды MLP: `101..120` (не использовались в разведочном исследовании).
+- Подтверждающие сиды CNN: `201..210`.
+- Сиды режимов объёма данных: `301..320`.
+- Оптимизатор: AdamW, затухание весов `1e-4`; не более `120` эпох; ранняя остановка (early stopping) по валидации после `18` эпох без улучшения.
+- Тестовые метрики оцениваются только после выбора по валидации.
 
-## Baselines
+## Базовые варианты
 
-1. Frozen backbone.
-2. Magnitude-only adaptation.
-3. LoRA `r=4` on every adapted layer.
-4. LoRA+ `r=4`, which uses a larger learning rate for `B` than for `A`.
-5. DoRA `r=4` on every adapted layer.
-6. Full fine-tuning.
-7. **LoRA matched to the DoRA budget.** For the MLP, validation selects one
-   allocation from `(5,4,4)`, `(4,5,4)`, and `(4,4,6)`. The closest options
-   use 2,024 parameters versus 2,034 for uniform DoRA `r=4`.
-8. **DoRA matched to the LoRA budget.** Validation selects one allocation from
-   `(4,3,3)`, `(3,4,3)`, and `(3,3,6)`. These use no more trainable parameters
-   than uniform LoRA `r=4`.
+1. Замороженная базовая архитектура.
+2. Адаптация только величины (magnitude-only).
+3. LoRA `r=4` на каждом адаптированном слое.
+4. LoRA+ `r=4`, использующая более высокую скорость обучения для `B`, чем для `A`.
+5. DoRA `r=4` на каждом адаптированном слое.
+6. Полное дообучение.
+7. **LoRA, согласованная с бюджетом DoRA.** Для MLP по валидации выбирается одно распределение из `(5,4,4)`, `(4,5,4)` и `(4,4,6)`. Ближайшие варианты используют 2,024 параметра против 2,034 у равномерной DoRA `r=4`.
+8. **DoRA, согласованная с бюджетом LoRA.** По валидации выбирается одно распределение из `(4,3,3)`, `(3,4,3)` и `(3,3,6)`. Эти варианты используют не больше обучаемых параметров, чем равномерная LoRA `r=4`.
 
-The allocation order is `(fc1, fc2, classifier)`. A single allocation and
-learning rate are selected per shift from pilot validation means and then frozen
-for every confirmatory seed.
+Порядок распределения: `(fc1, fc2, classifier)`. Для каждого сдвига по средним значениям пилотной валидации выбираются одно распределение и одна скорость обучения, после чего они фиксируются для всех подтверждающих сидов.
 
-## Hyperparameter selection
+## Выбор гиперпараметров
 
-- Standard adapter and magnitude grids: `0.003, 0.01, 0.03`.
-- Full fine-tuning grid: `0.0001, 0.0003, 0.001`.
-- LoRA+ grid for the `A` learning rate: `0.0003, 0.001, 0.003`; `B/A=16`.
-- Selection criterion: highest mean target-validation accuracy across the five
-  pilot seeds, with mean validation NLL as the tie-breaker.
-- Neither confirmatory accuracy nor confirmatory NLL may change the selected
-  configuration.
+- Стандартные сетки для адаптера и величины: `0.003, 0.01, 0.03`.
+- Сетка полного дообучения: `0.0001, 0.0003, 0.001`.
+- Сетка LoRA+ для скорости обучения `A`: `0.0003, 0.001, 0.003`; `B/A=16`.
+- Критерий выбора: наибольшая средняя точность на целевой валидационной выборке по пяти пилотным сидам; средний валидационный NLL используется для разрешения равенства.
+- Ни подтверждающая точность, ни подтверждающий NLL не могут изменить выбранную конфигурацию.
 
-## Primary comparisons and statistics
+## Основные сравнения и статистика
 
-The primary paired comparisons are DoRA versus LoRA, LoRA+, and
-budget-matched LoRA for each of the three shifts. Secondary comparisons include
-budget-matched DoRA versus uniform LoRA.
+Основные парные сравнения: DoRA против LoRA, LoRA+ и согласованной по бюджету LoRA для каждого из трёх сдвигов. Вторичные сравнения включают DoRA, согласованную по бюджету, против равномерной LoRA.
 
-For each comparison report:
+Для каждого сравнения сообщаются:
 
-- paired mean test-accuracy difference in percentage points;
-- 95% paired Student t interval;
-- paired effect size `d_z`;
-- paired t-test p-value;
-- Wilcoxon signed-rank p-value;
-- Holm correction across the family of primary comparisons.
+- средняя парная разность тестовой точности в процентных пунктах;
+- 95%-й доверительный интервал (ДИ) парного t-критерия;
+- величина эффекта `d_z`;
+- p-значение парного t-критерия;
+- p-значение критерия знаковых рангов Уилкоксона;
+- поправка Холма в пределах семьи основных сравнений.
 
-The mixed shift is the main positive hypothesis. Rotation is a secondary
-positive hypothesis. Contrast is an explicit negative-control setting in which
-magnitude-only adaptation may be sufficient.
+Смешанный сдвиг — основная положительная гипотеза. Поворот — вторичная положительная гипотеза. Контраст — явный негативный контроль, для которого адаптация только величины может быть достаточной.
 
-## Robustness tracks
+## Направления проверки устойчивости
 
-### Architecture replication
+### Проверка на второй архитектуре
 
-Repeat the validation-selection and confirmatory procedure on the compact CNN.
-This track is reported separately because it changes the backbone and adapter
-parameter counts.
+Процедура выбора по валидации и подтверждающая процедура повторяются на компактной CNN. Это направление приводится отдельно, поскольку изменяются базовая архитектура и число параметров адаптера.
 
-### Target-data sweep
+### Перебор режимов объёма целевых данных
 
-On the mixed shift, train with `5, 10, 20, 40` examples per class (50, 100,
-200, 400 total) using the MLP confirmatory configuration. Compare DoRA, LoRA,
-LoRA+, and both budget-matched variants across the 20 fixed data-regime seeds.
-Within each seed, the balanced subsets are nested and a sample retains the same
-mixed-corruption realization as the budget grows.
+Для смешанного сдвига проводится обучение на `5, 10, 20, 40` примерах каждого класса (всего 50, 100, 200, 400) с использованием подтверждающей конфигурации MLP. DoRA, LoRA, LoRA+ и оба согласованных по бюджету варианта сравниваются на 20 фиксированных сидах режимов объёма данных. В пределах каждого сида сбалансированные подвыборки вложены друг в друга, а пример сохраняет одну и ту же реализацию смешанного искажения при увеличении бюджета.
 
-### Synthetic optimization diagnostic
+### Синтетическая диагностика оптимизации
 
-Separate representational capacity from trainability by optimizing DoRA from
-its no-op initialization on new synthetic problems at magnitude strengths
-`0.0, 0.4, 0.8` and rank `4`. Use problem seeds `200..209` and five adapter
-initializations per problem (`0..4`, mapped deterministically to actual RNG
-seeds). For each initialization, optimize for at most `2,000` steps and select
-the lowest final matrix MSE from learning rates `0.01, 0.03, 0.1`. Compare the
-trained result with the feasible DoRA construction and the exact LoRA SVD
-oracle. Aggregate inferential summaries first within problem and then across
-the ten independent problem seeds, rather than treating five initializations
-of one problem as independent problems. This remains a mechanism diagnostic,
-not downstream evidence.
+Представительная способность отделяется от обучаемости посредством оптимизации DoRA из инициализации без эффекта (no-op) на новых синтетических задачах при силе изменения величины `0.0, 0.4, 0.8` и ранге `4`. Используются сиды задач `200..209` и пять инициализаций адаптера на задачу (`0..4`, детерминированно отображаемые в фактические сиды генератора случайных чисел). Для каждой инициализации выполняется не более `2,000` шагов оптимизации и выбирается наименьшая итоговая MSE матрицы среди скоростей обучения `0.01, 0.03, 0.1`. Обученный результат сравнивается с допустимой конструкцией DoRA и точным SVD-оракулом LoRA. Статистические сводки сначала агрегируются внутри задачи, а затем по десяти независимым сидам задач; пять инициализаций одной задачи не рассматриваются как независимые задачи. Это по-прежнему диагностика механизма, а не свидетельство на прикладной задаче.
 
-## Stopping and reporting rule
+## Правило остановки и представления результатов
 
-All declared runs are retained. Failed or numerically invalid runs are reported,
-not silently rerun with a different test-informed setting. Claims must include
-negative results, parameter counts, uncertainty, and the single-backbone or
-small-dataset limitations that remain after the extension.
+Все заявленные запуски сохраняются. Неудачные или численно некорректные запуски сообщаются, а не перезапускаются незаметно с другой настройкой, выбранной по тестовой выборке. Формулировки должны включать отрицательные результаты, число параметров, неопределённость и ограничения одной базовой архитектуры или малого набора данных, которые сохраняются после расширения.
