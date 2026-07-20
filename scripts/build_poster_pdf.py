@@ -1,46 +1,79 @@
-"""Wrap the verified high-resolution poster render in an exact ISO A1 PDF."""
+"""Export the editable AIRI poster to a print-ready A1 PDF with LibreOffice."""
 
 from __future__ import annotations
 
 import argparse
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
-from reportlab.lib.units import mm
-from reportlab.pdfgen.canvas import Canvas
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_INPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026.pptx"
+DEFAULT_OUTPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026.pdf"
 
 
-A1_PORTRAIT = (594 * mm, 841 * mm)
+def export_pdf(input_path: Path, output_path: Path) -> None:
+    office = shutil.which("soffice") or shutil.which("libreoffice")
+    if office is None:
+        raise RuntimeError(
+            "LibreOffice is required for reproducible command-line export. "
+            "Alternatively, export the supplied A1 PPTX from PowerPoint."
+        )
 
-
-def build_pdf(image_path: Path, output_path: Path) -> None:
+    input_path = input_path.resolve()
+    output_path = output_path.resolve()
+    if not input_path.is_file():
+        raise FileNotFoundError(input_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    page_width, page_height = A1_PORTRAIT
 
-    pdf = Canvas(str(output_path), pagesize=A1_PORTRAIT, pageCompression=1)
-    pdf.setTitle("DoRA vs LoRA: when does weight decomposition help?")
-    pdf.setAuthor("Vladislav Lapin")
-    pdf.setSubject("AIRI Summer School 2026 research poster")
-    pdf.setCreator("Artifact Tool render + ReportLab A1 wrapper")
-    pdf.drawImage(
-        str(image_path),
-        0,
-        0,
-        width=page_width,
-        height=page_height,
-        preserveAspectRatio=True,
-        anchor="c",
-        mask="auto",
-    )
-    pdf.showPage()
-    pdf.save()
+    with tempfile.TemporaryDirectory(prefix="airi-poster-") as tmp:
+        tmp_dir = Path(tmp)
+        profile = tmp_dir / "libreoffice-profile"
+        export_dir = tmp_dir / "export"
+        profile.mkdir()
+        export_dir.mkdir()
+
+        subprocess.run(
+            [
+                office,
+                f"-env:UserInstallation={profile.as_uri()}",
+                "--headless",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(export_dir),
+                str(input_path),
+            ],
+            check=True,
+        )
+
+        generated = export_dir / f"{input_path.stem}.pdf"
+        if not generated.is_file():
+            raise RuntimeError(f"LibreOffice did not create {generated}")
+        shutil.copy2(generated, output_path)
+
+    pdfinfo = shutil.which("pdfinfo")
+    if pdfinfo:
+        info = subprocess.run(
+            [pdfinfo, str(output_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        if "Pages:           1" not in info or "(A1)" not in info:
+            raise RuntimeError("Exported PDF is not a one-page ISO A1 document.")
+
+    print(f"saved {output_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("image", type=Path)
-    parser.add_argument("output", type=Path)
+    parser.add_argument("input", nargs="?", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("output", nargs="?", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
-    build_pdf(args.image, args.output)
+    export_pdf(args.input, args.output)
 
 
 if __name__ == "__main__":

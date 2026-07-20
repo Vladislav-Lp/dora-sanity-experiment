@@ -54,7 +54,9 @@ def output_mse(weight: torch.Tensor, target: torch.Tensor) -> float:
 def direction_error(weight: torch.Tensor, target: torch.Tensor) -> float:
     weight_unit = weight / torch.linalg.vector_norm(weight, dim=1, keepdim=True).clamp_min(1e-12)
     target_unit = target / torch.linalg.vector_norm(target, dim=1, keepdim=True).clamp_min(1e-12)
-    return float(torch.mean(1.0 - torch.sum(weight_unit * target_unit, dim=1)))
+    cosine_distance = 1.0 - torch.sum(weight_unit * target_unit, dim=1)
+    # Round-off can put a float32 cosine a few ulps outside [-1, 1].
+    return float(torch.mean(cosine_distance.clamp(0.0, 2.0)))
 
 
 def magnitude_relative_mae(weight: torch.Tensor, target: torch.Tensor) -> float:

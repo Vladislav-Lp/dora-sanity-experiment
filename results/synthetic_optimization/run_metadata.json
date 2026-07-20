@@ -1,0 +1,38 @@
+{
+  "protocol": "docs/EXTENSION_PROTOCOL.md",
+  "problem_seeds": [
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209
+  ],
+  "initializations": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "magnitude_strengths": [
+    0.0,
+    0.4,
+    0.8
+  ],
+  "rank": 4,
+  "steps": 2000,
+  "learning_rates": [
+    0.01,
+    0.03,
+    0.1
+  ],
+  "aggregation_unit": "problem_seed",
+  "elapsed_seconds": 115.98416996002197,
+  "torch_version": "2.13.0+cu130",
+  "quick": false
+}

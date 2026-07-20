@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airi-dora-geometry-study"
-version = "0.2.0"
-description = "Controlled DoRA/LoRA capacity study and few-shot image-domain adaptation benchmark"
+version = "0.3.2"
+description = "Protocol-frozen DoRA/LoRA capacity, optimization, and few-shot domain-adaptation study"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

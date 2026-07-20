@@ -11,7 +11,7 @@ import nbformat as nbf
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "notebooks" / "AIRI_DoRA_geometry_study.ipynb"
+OUTPUT = ROOT / "notebooks" / "AIRI_DoRA_confirmatory_study.ipynb"
 
 
 def _rich_data(value: object) -> dict[str, object]:
@@ -34,12 +34,8 @@ def _rich_data(value: object) -> dict[str, object]:
 
 
 def execute_in_process(notebook: nbf.NotebookNode) -> nbf.NotebookNode:
-    """Execute code cells without a Jupyter socket and embed their outputs.
+    """Validate cells top-to-bottom when hosted Jupyter sockets are blocked."""
 
-    The hosted workspace blocks ZMQ/TCP kernel sockets. This deterministic
-    fallback still validates the exact cells top-to-bottom in one shared Python
-    namespace and records standard notebook outputs.
-    """
     namespace: dict[str, object] = {"__name__": "__main__"}
     execution_count = 0
     os.chdir(ROOT)
@@ -49,23 +45,25 @@ def execute_in_process(notebook: nbf.NotebookNode) -> nbf.NotebookNode:
         execution_count += 1
         cell["execution_count"] = execution_count
         cell["outputs"] = []
-        source = cell["source"]
-        tree = ast.parse(source, filename=f"notebook-cell-{cell_index}", mode="exec")
+        tree = ast.parse(cell["source"], filename=f"notebook-cell-{cell_index}", mode="exec")
         final_expression = tree.body[-1] if tree.body and isinstance(tree.body[-1], ast.Expr) else None
         statements = tree.body[:-1] if final_expression is not None else tree.body
         stdout = io.StringIO()
         try:
             with contextlib.redirect_stdout(stdout):
                 if statements:
-                    module = ast.Module(body=statements, type_ignores=[])
-                    exec(compile(module, f"notebook-cell-{cell_index}", "exec"), namespace)
+                    exec(
+                        compile(ast.Module(body=statements, type_ignores=[]), f"notebook-cell-{cell_index}", "exec"),
+                        namespace,
+                    )
                 result = None
                 if final_expression is not None:
-                    expression = ast.Expression(final_expression.value)
-                    result = eval(compile(expression, f"notebook-cell-{cell_index}", "eval"), namespace)
-            printed = stdout.getvalue()
-            if printed:
-                cell["outputs"].append(nbf.v4.new_output("stream", name="stdout", text=printed))
+                    result = eval(
+                        compile(ast.Expression(final_expression.value), f"notebook-cell-{cell_index}", "eval"),
+                        namespace,
+                    )
+            if stdout.getvalue():
+                cell["outputs"].append(nbf.v4.new_output("stream", name="stdout", text=stdout.getvalue()))
             if result is not None:
                 cell["outputs"].append(
                     nbf.v4.new_output(
@@ -103,97 +101,124 @@ def main() -> None:
         nbf.v4.new_markdown_cell(
             """# When does DoRA help?
 
-**A controlled capacity study and a few-shot real-image proxy**  
+**A controlled held-seed study of adapter geometry, parameter budgets, and few-shot domain adaptation**  
 Vladislav Lapin · MIPT FPMI / AI360 · AIRI Summer School 2026
 
-## tl;dr
+## Technical summary
 
-- In the additive rank-4 control, LoRA and DoRA both represent the target up to numerical precision.
-- Under heterogeneous row-wise magnitude shift (`γ=0.8`), the best rank-4 additive LoRA residual is `0.292`, while a feasible DoRA construction remains at numerical zero.
-- On real images at fixed rank 4, DoRA changes accuracy versus LoRA by `+0.33 pp` (contrast), `+0.67 pp` (rotation), and `+1.39 pp` (mixed shift).
-- Magnitude-only adaptation is best for pure contrast, so DoRA is useful conditionally rather than universally.
+- Held-seed DoRA−LoRA estimates are **+1.06 pp** in the MLP and **+0.92 pp** in the CNN; Holm-adjusted paired-t `p=0.382213` and `0.158955` remain inconclusive.
+- The same sign appears on two fixed backbones and all four target-data budgets, conditional on one pretrained checkpoint per architecture.
+- Magnitude-only wins the pure-contrast control; parameter-matched LoRA ties DoRA on MLP rotation.
+- Trained synthetic DoRA usually realizes its capacity advantage, but convergence falls to 88% under the strongest magnitude shift.
+
+The contribution is a conditional result with uncertainty, not a claim that DoRA always beats LoRA.
 """
         ),
         nbf.v4.new_markdown_cell(
-            """## Context & Methods
+            """## Protocol and evidence boundary
 
-The notebook is an executed companion to the scripts, not the primary training entrypoint. Raw runs are produced by `run_synthetic.py` and `run_digits.py`; this notebook checks their coverage and presents the saved evidence.
-
-### Key assumptions
-
-- The synthetic comparison measures representational capacity: LoRA receives its exact SVD optimum and DoRA receives a feasible construction using the known generative decomposition.
-- The real-data benchmark is `sklearn Digits`, not an LLM reproduction.
-- Five paired adaptation seeds share one fixed pretrained backbone.
+Pilot seeds select learning rates and MLP rank allocations using target validation only. Held-seed adaptation seeds are disjoint, and target test is evaluated after every configuration is frozen. They quantify subset/corruption/optimization variability conditional on one fixed pretrained checkpoint per architecture. The target split existed in the exploratory phase, so this is a protocol-frozen internal confirmation, not an untouched external replication. The real-data benchmark uses `sklearn Digits`; it is not an LLM reproduction. The exact historical protocol is saved unchanged in `docs/EXTENSION_PROTOCOL.md`.
 """
         ),
         nbf.v4.new_code_cell(
             """from pathlib import Path
 import json
-import numpy as np
 import pandas as pd
 from IPython.display import Image
 
 ROOT = Path.cwd()
-assert (ROOT / "results" / "key_metrics.json").exists(), "Run this notebook from the repository root."
+extension_audit = json.loads((ROOT / "results" / "extension_validation.json").read_text())
+robustness_audit = json.loads((ROOT / "results" / "robustness_validation.json").read_text())
+assert extension_audit["status"] == "ready_to_share" and not extension_audit["issues"]
+assert robustness_audit["status"] == "ready_to_share" and not robustness_audit["issues"]
+{"confirmatory": extension_audit, "robustness": robustness_audit}"""
+        ),
+        nbf.v4.new_markdown_cell("## Validation-selected configurations"),
+        nbf.v4.new_code_cell(
+            """mlp_selected = pd.read_csv(ROOT / "results" / "confirmatory_mlp" / "selected_configs.csv", dtype={"allocation": str})
+cnn_selected = pd.read_csv(ROOT / "results" / "confirmatory_cnn" / "selected_configs.csv", dtype={"allocation": str})
 
-key_metrics = json.loads((ROOT / "results" / "key_metrics.json").read_text())
-key_metrics"""
-        ),
-        nbf.v4.new_markdown_cell("## Data\n\n### 1. Controlled capacity sweep"),
-        nbf.v4.new_code_cell(
-            """synthetic_runs = pd.read_csv(ROOT / "results" / "synthetic" / "synthetic_runs.csv")
-assert synthetic_runs["seed"].nunique() == 10
-assert set(synthetic_runs["rank"]) == {1, 2, 4, 8}
-assert set(synthetic_runs["magnitude_strength"]) == {0.0, 0.2, 0.4, 0.6, 0.8}
-
-capacity = pd.read_csv(ROOT / "results" / "synthetic" / "capacity_gap_summary.csv")
-capacity.query("rank == 4")[
-    ["magnitude_strength", "lora_relative_error_mean", "dora_relative_error_mean", "capacity_gap_log10_mean"]
-].round(6)"""
-        ),
-        nbf.v4.new_code_cell(
-            """Image(filename=ROOT / "figures" / "synthetic_capacity_gap.png", width=850, embed=True)"""
-        ),
-        nbf.v4.new_markdown_cell("### 2. Few-shot Digits domain adaptation"),
-        nbf.v4.new_code_cell(
-            """digit_runs = pd.read_csv(ROOT / "results" / "digits" / "digits_runs.csv")
-adapter_runs = digit_runs[digit_runs["method"].isin(["LoRA", "DoRA"])]
-coverage = adapter_runs.groupby(["scenario", "seed", "method"])["rank"].nunique()
-assert (coverage == 4).all()
-assert digit_runs["target_accuracy"].between(0, 1).all()
-
-rank4 = pd.read_csv(ROOT / "results" / "digits" / "rank4_method_summary.csv")
-rank4.pivot(index="scenario", columns="method", values="accuracy_mean_pct").round(2)"""
-        ),
-        nbf.v4.new_code_cell(
-            """Image(filename=ROOT / "figures" / "digits_rank4_benchmark.png", width=950, embed=True)"""
-        ),
-        nbf.v4.new_markdown_cell("## Results\n\n### Paired DoRA − LoRA differences"),
-        nbf.v4.new_code_cell(
-            """paired = pd.read_csv(ROOT / "results" / "digits" / "paired_delta_summary.csv")
-paired.assign(
-    interval=paired.apply(lambda row: f"[{row.ci95_low_pp:.2f}, {row.ci95_high_pp:.2f}]", axis=1)
-)[["scenario", "rank", "mean_delta_pp", "interval"]].round({"mean_delta_pp": 2})"""
-        ),
-        nbf.v4.new_code_cell(
-            """Image(filename=ROOT / "figures" / "digits_paired_delta.png", width=950, embed=True)"""
+selected = pd.concat([mlp_selected, cnn_selected], ignore_index=True)
+selected[[
+    "architecture", "scenario", "method_id", "allocation", "learning_rate",
+    "trainable_parameters", "validation_accuracy_mean"
+]].sort_values(["architecture", "scenario", "method_id"]).round(4)"""
         ),
         nbf.v4.new_markdown_cell(
-            """## Takeaways
+            """## Held-seed result: mixed-shift estimates are positive on both backbones
 
-1. **The old synthetic result needed a control.** At `γ=0`, rank-4 LoRA is already exact; DoRA's capacity advantage appears only when heterogeneous row scaling makes the additive update higher-rank.
-2. **A capacity gap is not an accuracy gap.** Real-data gains are measured in percentage points, not orders of magnitude.
-3. **DoRA is most convincing on the mixed shift.** At rank 4 the paired interval is positive, and validation-selected DoRA also leads the other trained methods.
-4. **Simpler can be better.** Magnitude-only adaptation wins on pure contrast with 202 parameters.
+Intervals below are paired within architecture and adaptation seed. Similar point estimates in the MLP and CNN are useful internal evidence, while the intervals and adjusted p-values prevent describing this as family-wise confirmation or cross-checkpoint replication.
+"""
+        ),
+        nbf.v4.new_code_cell(
+            """comparisons = pd.read_csv(ROOT / "results" / "extension_paired_comparisons.csv")
+comparisons.query("comparison == 'dora_vs_lora'")[[
+    "architecture", "scenario", "mean_delta_pp", "ci95_low_pp", "ci95_high_pp",
+    "paired_effect_dz", "paired_t_p", "paired_t_p_holm", "wins", "ties", "losses", "n_pairs"
+]].round(4)"""
+        ),
+        nbf.v4.new_code_cell(
+            """Image(filename=ROOT / "figures" / "extension" / "confirmatory_dora_minus_lora.png", width=950, embed=True)"""
+        ),
+        nbf.v4.new_markdown_cell(
+            """## Stronger and nearly parameter-matched baselines
 
-## Limitations
+The fixed LoRA+ `B/A=16` ratio is a declared optimizer baseline, not an exhaustive LoRA+ tuning study. Its mixed-shift Holm-adjusted value is `p=0.050935`, above `0.05`. Budgeted DoRA is a separate descriptive secondary comparison (`+0.82 pp`, CI `[−0.22, +1.86]`, raw `p=0.115696`, secondary-family Holm `p=0.347089`) and is not used to rescue the primary claim.
+"""
+        ),
+        nbf.v4.new_code_cell(
+            """mixed_primary = comparisons.query(
+    "architecture == 'mlp' and scenario == 'mixed' and numerator == 'dora'"
+)[[
+    "comparator", "mean_delta_pp", "ci95_low_pp", "ci95_high_pp", "paired_effect_dz",
+    "paired_t_p_holm", "wilcoxon_p_holm", "wins", "ties", "losses"
+]]
+mixed_primary.round(4)"""
+        ),
+        nbf.v4.new_code_cell(
+            """Image(filename=ROOT / "figures" / "extension" / "mixed_strong_baselines.png", width=850, embed=True)"""
+        ),
+        nbf.v4.new_markdown_cell(
+            """## Target-data sweep
 
-- small real-image proxy and one fixed backbone;
-- five paired adaptation seeds;
-- known ground-truth decomposition in the synthetic capacity construction;
-- no wall-clock comparison and no LLM/GLUE reproduction.
+The 50/100/200/400-example subsets are class-balanced and nested. A retained sample keeps the same corruption realization, and every method reuses the mixed-shift configuration selected before this sweep.
+"""
+        ),
+        nbf.v4.new_code_cell(
+            """data_accuracy = pd.read_csv(ROOT / "results" / "data_sweep_mlp" / "data_sweep_accuracy_ci.csv")
+data_delta = pd.read_csv(ROOT / "results" / "data_sweep_mlp" / "data_sweep_paired_comparisons.csv")
+data_accuracy[data_accuracy["method_id"].isin(["dora", "lora", "lora_plus"])][[
+    "adaptation_examples", "method", "accuracy_mean_pct", "accuracy_ci95_low_pct", "accuracy_ci95_high_pct"
+]].round(2)"""
+        ),
+        nbf.v4.new_code_cell(
+            """Image(filename=ROOT / "figures" / "extension" / "data_regime_accuracy.png", width=850, embed=True)"""
+        ),
+        nbf.v4.new_markdown_cell(
+            """## Synthetic capacity versus trainability
 
-The next experiment should use the official PEFT implementation on a small pretrained transformer, with LoRA, DoRA, and rsLoRA evaluated under validation-tuned learning rates and matched target modules.
+LoRA receives its exact rank-4 SVD optimum. Feasible DoRA uses the known generating decomposition. Trained DoRA starts from the standard no-op initialization; the inferential unit is the independent matrix problem, not each optimizer initialization.
+"""
+        ),
+        nbf.v4.new_code_cell(
+            """synthetic = pd.read_csv(
+    ROOT / "results" / "synthetic_optimization" / "synthetic_optimization_verified_summary.csv"
+)
+synthetic.round(7)"""
+        ),
+        nbf.v4.new_code_cell(
+            """Image(filename=ROOT / "figures" / "extension" / "synthetic_optimization.png", width=850, embed=True)"""
+        ),
+        nbf.v4.new_markdown_cell(
+            """## Interpretation and limits
+
+1. **Geometry is a testable hypothesis.** Mixed direction+magnitude change is the setting in which DoRA has the clearest positive conditional point estimate here.
+2. **Parameter count is not the whole explanation.** DoRA remains ahead of a LoRA allocation within ten parameters of its MLP budget, although the interval is wide.
+3. **Capacity is not optimization.** The synthetic target is exactly representable, yet strong magnitude shift creates failed DoRA initializations.
+4. **Simpler can be better.** Magnitude-only adaptation wins on contrast, and matched LoRA closes rotation.
+5. **External validity remains open.** One fixed Digits checkpoint per architecture is neither cross-checkpoint replication nor transformer-scale evidence.
+
+The next high-value study is an external, separately frozen PEFT experiment on a small pretrained transformer with matched target modules and multiple base checkpoints.
 """
         ),
     ]

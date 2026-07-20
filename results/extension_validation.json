@@ -1,0 +1,19 @@
+{
+  "status": "ready_to_share",
+  "issues": [],
+  "confirmatory_rows": 660,
+  "architectures": [
+    "cnn",
+    "mlp"
+  ],
+  "scenarios": [
+    "contrast",
+    "mixed",
+    "rotation"
+  ],
+  "generated_files": [
+    "results/extension_accuracy_summary.csv",
+    "results/extension_paired_comparisons.csv",
+    "docs/EXTENSION_VALIDATION.md"
+  ]
+}

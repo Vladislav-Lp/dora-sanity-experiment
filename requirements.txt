@@ -8,4 +8,3 @@ nbformat>=5.9,<6
 nbclient>=0.9,<1
 ipykernel>=6.29,<8
 qrcode[pil]>=7.4,<9
-reportlab>=4,<5
