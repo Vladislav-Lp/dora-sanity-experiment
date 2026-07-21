@@ -148,7 +148,7 @@ def mixed_comparators() -> None:
         "lora_plus": t("LoRA+ · 1,832 params", "LoRA+ · 1 832 параметра"),
         "lora_matched": t(
             "LoRA budget-matched · 2,024 params",
-            "LoRA с согласованным бюджетом · 2 024 параметра",
+            "LoRA с бюджетом параметров DoRA · 2 024 параметра",
         ),
     }
     data = data.set_index("comparator").reindex(order)
