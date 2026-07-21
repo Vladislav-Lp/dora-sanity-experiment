@@ -1,3 +1,5 @@
+[Русская версия](README.md) · [English version](README_EN.md)
+
 # Когда DoRA помогает?
 
 **Контролируемое исследование выразительной способности, оптимизации и few-shot-адаптации к целевой предметной области для Летней школы AIRI 2026.**
@@ -7,6 +9,8 @@
 > **Главный вывод:** DoRA дала положительные точечные оценки на новых отложенных сидах, когда целевой сдвиг одновременно требовал менять направление и неоднородно масштабировать строки весов. После поправки на множественные сравнения доказательства остаются неубедительными, поэтому результат интерпретируется как осторожная внутренняя оценка, а не как универсальная победа над LoRA.
 
 ## Материалы AIRI
+
+Русская версия является основной для QR-кода, постерной сессии и публичной страницы проекта. Английская версия сохранена как дополнительный материал для внешней аудитории.
 
 - [Русский постер A1, готовый к печати (PDF)](poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf)
 - [Редактируемый русский постер A1 (PPTX)](poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx)
@@ -144,7 +148,7 @@ python run_data_sweep.py
 python run_synthetic_optimization.py
 python analyze_robustness.py
 python make_extension_figures.py --lang en
-python scripts/make_extension_figures_ru.py
+python make_extension_figures.py --lang ru
 python scripts/build_notebook.py
 python scripts/build_technical_report.py
 python scripts/build_poster_pdf.py poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf
@@ -179,3 +183,5 @@ python scripts/build_poster_pdf.py poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx
 6. Hugging Face PEFT. [Документация по LoRA и DoRA](https://huggingface.co/docs/peft/package_reference/lora).
 
 Автор: **Владислав Лапин** · МФТИ ФПМИ / AI360.
+
+QR-код на русском постере ведёт на основную ветку `main` этого публичного репозитория.
