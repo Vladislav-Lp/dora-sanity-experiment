@@ -1,0 +1,126 @@
+name: Build final Russian AIRI poster
+
+on:
+  push:
+    branches:
+      - agent/airi-dora-confirmatory-ru
+    paths:
+      - scripts/build_poster_ru.js
+      - scripts/make_poster_assets_ru.py
+      - scripts/extract_poster_logos.py
+      - scripts/build_poster_pdf.py
+      - scripts/normalize_ru_terminology.py
+      - .github/workflows/build-final-ru-poster.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-impress poppler-utils fonts-dejavu-core
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install matplotlib numpy pillow qrcode lxml
+          npm install --no-save pptxgenjs@4.0.0
+
+      - name: Normalize current Russian terminology across repository text
+        run: python scripts/normalize_ru_terminology.py
+
+      - name: Recover official logos from the previous editable poster
+        run: python scripts/extract_poster_logos.py
+
+      - name: Generate Russian charts and public main-branch QR
+        run: python scripts/make_poster_assets_ru.py
+
+      - name: Build editable A1 PPTX
+        run: node scripts/build_poster_ru.js
+
+      - name: Export print-ready A1 PDF
+        run: python scripts/build_poster_pdf.py
+
+      - name: Render README preview
+        run: |
+          pdftoppm -png -singlefile -r 100 \
+            poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf \
+            poster/poster_preview_RU
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          path = Path('poster/poster_preview_RU.png')
+          image = Image.open(path).convert('RGB')
+          width = 1400
+          height = round(image.height * width / image.width)
+          image.resize((width, height), Image.Resampling.LANCZOS).save(path, optimize=True, compress_level=9)
+          print('preview', width, height, path.stat().st_size)
+          PY
+
+      - name: Validate final files and terminology
+        run: |
+          pdfinfo poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf | tee /tmp/pdfinfo.txt
+          grep -q 'Pages:.*1' /tmp/pdfinfo.txt
+          grep -q '(A1)' /tmp/pdfinfo.txt
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from lxml import etree
+
+          pptx = Path('poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx')
+          pdf = Path('poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf')
+          preview = Path('poster/poster_preview_RU.png')
+          for path in (pptx, pdf, preview):
+              assert path.is_file() and path.stat().st_size > 100_000, path
+
+          texts = []
+          rels = []
+          with ZipFile(pptx) as archive:
+              for name in archive.namelist():
+                  if name.startswith('ppt/slides/slide') and name.endswith('.xml'):
+                      root = etree.fromstring(archive.read(name))
+                      texts.extend(root.xpath('//a:t/text()', namespaces={'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'}))
+                  if name.startswith('ppt/slides/_rels/') and name.endswith('.rels'):
+                      rels.append(archive.read(name).decode('utf-8'))
+          text = '\n'.join(texts)
+          rel_text = '\n'.join(rels)
+          required = ['КОМБИНИРОВАННЫЙ СДВИГ', 'новых отложенных сидов', 'выражает цель', 'осторожная внутренняя оценка']
+          forbidden = ['смешанный сдвиг', 'удержанных сидов', 'Следующая проверка', 'ПРИВАТНАЯ ССЫЛКА']
+          for item in required:
+              assert item in text, item
+          for item in forbidden:
+              assert item not in text, item
+          assert 'https://github.com/Vladislav-Lp/dora-sanity-experiment' in rel_text
+          assert '/tree/agent/airi-dora-confirmatory-ru' not in rel_text
+          print('PPTX terminology and hyperlink validated')
+          PY
+
+      - name: Commit generated poster files
+        run: |
+          rm -rf poster/.build node_modules package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Poster files are already current.'
+          else
+            git commit -m 'Обновить финальный русский постер AIRI 2026'
+            git push
+          fi
