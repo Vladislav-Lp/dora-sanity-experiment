@@ -1,6 +1,6 @@
 # Когда DoRA помогает?
 
-**Контролируемое исследование представительной способности, оптимизации и few-shot-адаптации к целевой предметной области для Летней школы AIRI 2026.**
+**Контролируемое исследование представительной способности, оптимизации и адаптации по малой выборке к целевой предметной области для Летней школы AIRI 2026.**
 
 Этот репозиторий превращает первоначальную минимальную проверку корректности на одной матрице (sanity check) во внутреннее подтверждение по зафиксированному протоколу на малых моделях: с более сильными базовыми вариантами, контролем бюджета параметров, второй архитектурой, перебором режимов объёма целевых данных и явным учётом неопределённости.
 
@@ -8,15 +8,17 @@
 
 ## Материалы AIRI
 
-- [Плакат формата A1, готовый к печати (PDF)](poster/Lapin_Vladislav_DoRA_AIRI_2026.pdf)
-- [Редактируемый плакат формата A1 (PPTX)](poster/Lapin_Vladislav_DoRA_AIRI_2026.pptx)
+- [Русский плакат формата A1, готовый к печати (PDF)](poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf)
+- [Редактируемый русский плакат формата A1 (PPTX)](poster/Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx)
+- [Английский плакат формата A1, готовый к печати (PDF)](poster/Lapin_Vladislav_DoRA_AIRI_2026.pdf)
+- [Редактируемый английский плакат формата A1 (PPTX)](poster/Lapin_Vladislav_DoRA_AIRI_2026.pptx)
 - [Провалидированный ноутбук со встроенными результатами выполнения (запуск в текущем процессе)](notebooks/AIRI_DoRA_confirmatory_study.ipynb)
 - [Автономный технический отчёт](report/DoRA_AIRI_technical_report.html)
 - [Полное исследовательское повествование](docs/RESEARCH_REPORT.md)
 - [Зафиксированный протокол расширенного исследования](docs/EXTENSION_PROTOCOL.md)
 - [Русский сценарий защиты и ответы на вопросы](docs/DEFENSE_NOTES.md)
 
-![Предпросмотр плаката AIRI о DoRA](poster/poster_preview.png)
+![Предпросмотр русского плаката AIRI о DoRA](poster/poster_preview_RU.png)
 
 ## Ключевые результаты
 
@@ -105,18 +107,18 @@ W_DoRA = m ⊙ V / ||V||row
 
 ```text
 .
-├── src/dora_study/                  # Linear/Conv2d adapters, MLP/CNN, data and synthetic code
-├── tests/                           # 11 deterministic correctness tests
+├── src/dora_study/                  # адаптеры Linear/Conv2d, MLP/CNN, код данных и синтетики
+├── tests/                           # 11 детерминированных проверок корректности
 ├── results/
-│   ├── confirmatory_mlp/            # pilot selection + 20 held seeds
-│   ├── confirmatory_cnn/            # second-backbone held-seed check
-│   ├── data_sweep_mlp/              # nested 50/100/200/400-example sweep
-│   └── synthetic_optimization/      # trained-vs-feasible mechanism diagnostic
-├── figures/extension/               # poster-ready PNG + SVG evidence
-├── notebooks/                       # executed analysis companion
-├── poster/                          # editable AIRI PPTX and print PDF
-├── report/                          # validated, self-contained technical HTML report
-├── docs/                            # protocol, report, chart map, and validation records
+│   ├── confirmatory_mlp/            # пилотный выбор + 20 удержанных сидов
+│   ├── confirmatory_cnn/            # проверка на второй архитектуре и удержанных сидах
+│   ├── data_sweep_mlp/              # вложенный перебор 50/100/200/400 примеров
+│   └── synthetic_optimization/      # диагностика обучения и допустимого решения
+├── figures/extension/               # материалы для плаката в PNG и SVG
+├── notebooks/                       # выполненный ноутбук анализа
+├── poster/                          # редактируемые PPTX и печатные PDF AIRI
+├── report/                          # проверенный автономный технический HTML-отчёт
+├── docs/                            # протокол, отчёт, карта графиков и записи проверок
 ├── run_confirmatory.py
 ├── run_data_sweep.py
 ├── run_synthetic_optimization.py
@@ -134,12 +136,12 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-# Fast correctness and end-to-end smoke checks
+# Быстрые проверки корректности и сквозные проверки работоспособности
 python -m unittest discover -s tests -v
 python run_confirmatory.py --architecture mlp --quick --output-dir /tmp/dora-mlp-smoke
 python run_confirmatory.py --architecture cnn --quick --output-dir /tmp/dora-cnn-smoke
 
-# Full protocol-frozen extension (use fresh output directories)
+# Полное расширение по зафиксированному протоколу (используйте новые каталоги вывода)
 python run_confirmatory.py --architecture mlp
 python run_confirmatory.py --architecture cnn
 python analyze_extension.py
@@ -149,7 +151,7 @@ python analyze_robustness.py
 python make_extension_figures.py
 python scripts/build_notebook.py
 python scripts/build_technical_report.py
-python scripts/build_poster_pdf.py  # requires LibreOffice or export the PPTX in PowerPoint
+python scripts/build_poster_pdf.py  # требуется LibreOffice; также можно экспортировать PPTX в PowerPoint
 ```
 
 Скрипты запуска экспериментов отказываются записывать данные в непустой каталог результатов. Это не позволяет позднему запуску незаметно смешаться с зафиксированным набором результатов.

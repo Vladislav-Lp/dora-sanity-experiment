@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -22,6 +23,11 @@ BLUE_LIGHT = "#AFC2EF"
 ORANGE = "#E38A33"
 GREY = "#AAB4B9"
 PALE = "#F3F7F7"
+LANG = "en"
+
+
+def t(en: str, ru: str) -> str:
+    return ru if LANG == "ru" else en
 
 
 def setup() -> None:
@@ -45,6 +51,8 @@ def setup() -> None:
 
 
 def save(fig: plt.Figure, name: str) -> None:
+    if LANG == "ru":
+        name = f"{name}_RU"
     fig.savefig(FIGURES / f"{name}.png", dpi=300, bbox_inches="tight")
     fig.savefig(FIGURES / f"{name}.svg", bbox_inches="tight")
     plt.close(fig)
@@ -54,7 +62,11 @@ def confirmatory_deltas() -> None:
     comparisons = pd.read_csv(ROOT / "results" / "extension_paired_comparisons.csv")
     data = comparisons[comparisons["comparison"] == "dora_vs_lora"].copy()
     scenario_order = ["contrast", "rotation", "mixed"]
-    labels = {"contrast": "Contrast", "rotation": "Rotation", "mixed": "Mixed"}
+    labels = {
+        "contrast": t("Contrast", "Контраст"),
+        "rotation": t("Rotation", "Поворот"),
+        "mixed": t("Mixed", "Смешанный"),
+    }
 
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.55), sharex=True, sharey=True)
     for ax, architecture, n_pairs, marker in zip(axes, ["mlp", "cnn"], [20, 10], ["o", "s"]):
@@ -79,7 +91,14 @@ def confirmatory_deltas() -> None:
             zorder=3,
         )
         ax.set_yticks(y, [labels[item] for item in scenario_order])
-        ax.set_title(f"{architecture.upper()} · n={n_pairs} held seeds", loc="left", fontweight="bold")
+        ax.set_title(
+            t(
+                f"{architecture.upper()} · n={n_pairs} held seeds",
+                f"{architecture.upper()} · n={n_pairs} удержанных сидов",
+            ),
+            loc="left",
+            fontweight="bold",
+        )
         ax.grid(axis="x", color=GRID, linewidth=0.8)
         ax.set_axisbelow(True)
         for scenario, x, yy in zip(scenario_order, means, y):
@@ -94,12 +113,20 @@ def confirmatory_deltas() -> None:
             )
     axes[0].set_xlim(-1.5, 2.6)
     for ax in axes:
-        ax.set_xlabel("DoRA − LoRA test accuracy (percentage points)")
-    fig.suptitle("Held-seed paired estimates on two fixed backbones", x=0.07, ha="left", fontweight="bold")
+        ax.set_xlabel(t("DoRA − LoRA test accuracy (percentage points)", "Разность точности DoRA − LoRA, п.п."))
+    fig.suptitle(
+        t("Held-seed paired estimates on two fixed backbones", "Парные оценки на удержанных сидах"),
+        x=0.07,
+        ha="left",
+        fontweight="bold",
+    )
     fig.text(
         0.07,
         0.90,
-        "Mean and 95% paired t interval; one fixed pretrained checkpoint per backbone",
+        t(
+            "Mean and 95% paired t interval; one fixed pretrained checkpoint per backbone",
+            "Среднее и 95%-й парный t-интервал; один фиксированный чекпоинт на архитектуру",
+        ),
         color=MUTED,
         fontsize=9.5,
     )
@@ -117,9 +144,12 @@ def mixed_comparators() -> None:
     ].copy()
     order = ["lora", "lora_plus", "lora_matched"]
     labels = {
-        "lora": "LoRA · 1,832 params",
-        "lora_plus": "LoRA+ · 1,832 params",
-        "lora_matched": "LoRA budget-matched · 2,024 params",
+        "lora": t("LoRA · 1,832 params", "LoRA · 1 832 параметра"),
+        "lora_plus": t("LoRA+ · 1,832 params", "LoRA+ · 1 832 параметра"),
+        "lora_matched": t(
+            "LoRA budget-matched · 2,024 params",
+            "LoRA с согласованным бюджетом · 2 024 параметра",
+        ),
     }
     data = data.set_index("comparator").reindex(order)
     y = np.arange(len(order))[::-1]
@@ -143,9 +173,17 @@ def mixed_comparators() -> None:
     ax.set_yticks(y, [labels[item] for item in order])
     ax.set_ylim(-0.3, 2.55)
     ax.set_xlim(-1.0, 3.0)
-    ax.set_xlabel("DoRA r=4 (2,034 params) minus comparator accuracy, pp")
+    ax.set_xlabel(
+        t(
+            "DoRA r=4 (2,034 params) minus comparator accuracy, pp",
+            "Разность точности DoRA r=4 (2 034 параметра) и базового варианта, п.п.",
+        )
+    )
     ax.set_title(
-        "MLP mixed shift: stronger and budget-matched baselines",
+        t(
+            "MLP mixed shift: stronger and budget-matched baselines",
+            "MLP, смешанный сдвиг: усиленные базовые варианты",
+        ),
         loc="left",
         fontweight="bold",
         pad=28,
@@ -153,7 +191,10 @@ def mixed_comparators() -> None:
     ax.text(
         0.0,
         1.01,
-        "20 held adaptation seeds · 95% t intervals · Holm family includes 9 primary tests",
+        t(
+            "20 held adaptation seeds · 95% t intervals · Holm family includes 9 primary tests",
+            "20 удержанных сидов · 95%-е t-интервалы · семья сравнений: 9 основных проверок (поправка Холма)",
+        ),
         transform=ax.transAxes,
         color=MUTED,
         fontsize=9.2,
@@ -162,14 +203,22 @@ def mixed_comparators() -> None:
     ax.set_axisbelow(True)
     for index, (x, yy, p_value) in enumerate(zip(means, y, data["paired_t_p_holm"])):
         ax.annotate(
-            f"{x:+.2f} pp",
+            t(f"{x:+.2f} pp", f"{x:+.2f} п.п."),
             (x, yy),
             xytext=(0, -16 if index == 0 else 10),
             textcoords="offset points",
             ha="center",
             fontsize=9,
         )
-        ax.text(2.95, yy, f"Holm p={p_value:.3f}", ha="right", va="center", color=MUTED, fontsize=8.5)
+        ax.text(
+            2.95,
+            yy,
+            t(f"Holm p={p_value:.3f}", f"p с поправкой Холма={p_value:.3f}"),
+            ha="right",
+            va="center",
+            color=MUTED,
+            fontsize=8.5,
+        )
     fig.tight_layout()
     save(fig, "mixed_strong_baselines")
 
@@ -206,13 +255,21 @@ def data_regime_accuracy() -> None:
         )
     ax.set_xticks([50, 100, 200, 400])
     ax.set_ylim(56, 78)
-    ax.set_xlabel("Target adaptation examples (balanced across 10 classes)")
-    ax.set_ylabel("Mixed-shift test accuracy, %")
-    ax.set_title("Target-data regime sweep", loc="left", fontweight="bold", pad=28)
+    ax.set_xlabel(
+        t(
+            "Target adaptation examples (balanced across 10 classes)",
+            "Целевые примеры для адаптации (баланс по 10 классам)",
+        )
+    )
+    ax.set_ylabel(t("Mixed-shift test accuracy, %", "Точность при смешанном сдвиге, %"))
+    ax.set_title(t("Target-data regime sweep", "Объёмы целевых данных"), loc="left", fontweight="bold", pad=28)
     ax.text(
         0.0,
         1.01,
-        "20 paired adaptation seeds · nested subsets · mean and 95% CI · focused y-axis",
+        t(
+            "20 paired adaptation seeds · nested subsets · mean and 95% CI · focused y-axis",
+            "20 парных сидов · вложенные подвыборки · среднее и 95%-й ДИ · увеличенная шкала Y",
+        ),
         transform=ax.transAxes,
         color=MUTED,
         fontsize=9.2,
@@ -229,8 +286,8 @@ def data_regime_deltas() -> None:
         ROOT / "results" / "data_sweep_mlp" / "data_sweep_paired_comparisons.csv"
     )
     styles = {
-        "lora": {"label": "vs LoRA", "color": TEAL, "marker": "o", "offset": -5},
-        "lora_plus": {"label": "vs LoRA+", "color": BLUE, "marker": "s", "offset": 5},
+        "lora": {"label": t("vs LoRA", "против LoRA"), "color": TEAL, "marker": "o", "offset": -5},
+        "lora_plus": {"label": t("vs LoRA+", "против LoRA+"), "color": BLUE, "marker": "s", "offset": 5},
     }
     fig, ax = plt.subplots(figsize=(7.4, 3.8))
     ax.axhline(0.0, color=INK, linewidth=1.1)
@@ -255,13 +312,21 @@ def data_regime_deltas() -> None:
         )
     ax.set_xticks([50, 100, 200, 400])
     ax.set_ylim(-1.5, 5.0)
-    ax.set_xlabel("Target adaptation examples")
-    ax.set_ylabel("DoRA accuracy advantage, pp")
-    ax.set_title("Paired DoRA effects across data budgets", loc="left", fontweight="bold", pad=28)
+    ax.set_xlabel(t("Target adaptation examples", "Целевые примеры для адаптации"))
+    ax.set_ylabel(t("DoRA accuracy advantage, pp", "Преимущество DoRA, п.п."))
+    ax.set_title(
+        t("Paired DoRA effects across data budgets", "Парные эффекты DoRA при разных объёмах данных"),
+        loc="left",
+        fontweight="bold",
+        pad=28,
+    )
     ax.text(
         0.0,
         1.01,
-        "Mean and 95% paired t interval · n=20 seeds per budget",
+        t(
+            "Mean and 95% paired t interval · n=20 seeds per budget",
+            "Среднее и 95%-й парный t-интервал · n=20 сидов на объём данных",
+        ),
         transform=ax.transAxes,
         color=MUTED,
         fontsize=9.2,
@@ -285,9 +350,9 @@ def synthetic_optimization() -> None:
         )
     )
     methods = [
-        ("trained", "DoRA trained", TEAL, "o", -0.07, True),
-        ("feasible", "DoRA feasible", TEAL_LIGHT, "o", 0.0, False),
-        ("lora", "LoRA SVD oracle", BLUE, "s", 0.07, True),
+        ("trained", t("DoRA trained", "DoRA: обучение"), TEAL, "o", -0.07, True),
+        ("feasible", t("DoRA feasible", "DoRA: допустимое решение"), TEAL_LIGHT, "o", 0.0, False),
+        ("lora", t("LoRA SVD oracle", "SVD-оракул LoRA"), BLUE, "s", 0.07, True),
     ]
     rng = np.random.default_rng(2026)
     fig, ax = plt.subplots(figsize=(7.4, 4.3))
@@ -317,10 +382,10 @@ def synthetic_optimization() -> None:
     ax.set_yscale("log")
     ax.set_ylim(5e-8, 1.0)
     ax.set_xticks([0.0, 0.4, 0.8])
-    ax.set_xlabel("Row-wise magnitude strength, γ")
-    ax.set_ylabel("Relative weight error (log scale)")
+    ax.set_xlabel(t("Row-wise magnitude strength, γ", "Сила построчного сдвига величины, γ"))
+    ax.set_ylabel(t("Relative weight error (log scale)", "Относительная ошибка весов (лог. шкала)"))
     ax.set_title(
-        "Synthetic capacity and optimization diagnostic",
+        t("Synthetic capacity and optimization diagnostic", "Представимость и оптимизация"),
         loc="left",
         fontweight="bold",
         pad=28,
@@ -328,7 +393,10 @@ def synthetic_optimization() -> None:
     ax.text(
         0.0,
         1.01,
-        "rank 4 · 10 independent problems · trained points average 5 initializations · bar = median",
+        t(
+            "rank 4 · 10 independent problems · trained points average 5 initializations · bar = median",
+            "ранг 4 · 10 независимых задач · обучение: среднее по 5 инициализациям · черта = медиана",
+        ),
         transform=ax.transAxes,
         color=MUTED,
         fontsize=8.9,
@@ -354,8 +422,8 @@ def mixed_accuracy_by_backbone() -> None:
         "dora": "DoRA",
         "lora": "LoRA",
         "lora_plus": "LoRA+",
-        "full": "Full FT",
-        "magnitude": "Magnitude-only",
+        "full": t("Full FT", "Полное дообучение"),
+        "magnitude": t("Magnitude-only", "Только величина"),
     }
     colors = {"dora": TEAL, "lora": BLUE, "lora_plus": BLUE_LIGHT, "full": INK, "magnitude": GREY}
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.8), sharex=True, sharey=True)
@@ -383,14 +451,30 @@ def mixed_accuracy_by_backbone() -> None:
             ax.annotate(f"{x:.1f}", (x, yy), xytext=(5, 0), textcoords="offset points", va="center", fontsize=8.5)
     axes[0].set_xlim(62, 83)
     for ax in axes:
-        ax.set_xlabel("Mixed-shift test accuracy, % (focused scale)")
-    fig.suptitle("Mixed-shift accuracy by backbone", x=0.07, ha="left", fontweight="bold")
-    fig.text(0.07, 0.90, "Mean and 95% CI across held adaptation seeds", color=MUTED, fontsize=9.5)
+        ax.set_xlabel(t("Mixed-shift test accuracy, % (focused scale)", "Точность при смешанном сдвиге, %"))
+    fig.suptitle(
+        t("Mixed-shift accuracy by backbone", "Точность при смешанном сдвиге по архитектурам"),
+        x=0.07,
+        ha="left",
+        fontweight="bold",
+    )
+    fig.text(
+        0.07,
+        0.90,
+        t("Mean and 95% CI across held adaptation seeds", "Среднее и 95%-й ДИ по удержанным сидам адаптации"),
+        color=MUTED,
+        fontsize=9.5,
+    )
     fig.tight_layout(rect=[0, 0.01, 1, 0.86], w_pad=2.0)
     save(fig, "mixed_accuracy_by_backbone")
 
 
 def main() -> None:
+    global LANG
+    parser = argparse.ArgumentParser(description="Generate English or Russian extension figures.")
+    parser.add_argument("--lang", choices=["en", "ru"], default="en")
+    args = parser.parse_args()
+    LANG = args.lang
     setup()
     confirmatory_deltas()
     mixed_comparators()
