@@ -385,7 +385,7 @@ def synthetic_optimization() -> None:
     ax.set_xlabel(t("Row-wise magnitude strength, γ", "Сила построчного сдвига величины, γ"))
     ax.set_ylabel(t("Relative weight error (log scale)", "Относительная ошибка весов (лог. шкала)"))
     ax.set_title(
-        t("Synthetic capacity and optimization diagnostic", "Представимость и оптимизация"),
+        t("Synthetic capacity and optimization diagnostic", "Представительная способность и оптимизация"),
         loc="left",
         fontweight="bold",
         pad=28,
