@@ -1,4 +1,4 @@
-"""Export the editable AIRI poster to a print-ready A1 PDF with LibreOffice."""
+"""Export the primary Russian AIRI poster to a print-ready A1 PDF with LibreOffice."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_INPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026.pptx"
-DEFAULT_OUTPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026.pdf"
+DEFAULT_INPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026_RU.pptx"
+DEFAULT_OUTPUT = ROOT / "poster" / "Lapin_Vladislav_DoRA_AIRI_2026_RU.pdf"
 
 
 def export_pdf(input_path: Path, output_path: Path) -> None:
