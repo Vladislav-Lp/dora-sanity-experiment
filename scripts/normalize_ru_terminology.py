@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = {
     ROOT / "docs" / "EXTENSION_PROTOCOL.md",  # frozen historical protocol
+    ROOT / "scripts" / "normalize_ru_terminology.py",
 }
 EXTENSIONS = {".md", ".py", ".html", ".json", ".txt", ".yml", ".yaml", ".cff"}
 REPLACEMENTS = [
