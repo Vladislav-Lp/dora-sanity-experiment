@@ -125,3 +125,5 @@ jobs:
             git commit -m 'Обновить финальный русский постер AIRI 2026'
             git push
           fi
+
+# Main is the public Russian project branch; English materials remain available through README_EN.md.
