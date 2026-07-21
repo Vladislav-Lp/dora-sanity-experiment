@@ -3,6 +3,7 @@ name: Build final Russian AIRI poster
 on:
   push:
     branches:
+      - main
       - agent/airi-dora-confirmatory-ru
     paths:
       - scripts/build_poster_ru.js
